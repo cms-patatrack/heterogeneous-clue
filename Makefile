@@ -115,7 +115,6 @@ endif
 
 # Input data definitions
 DATA_BASE := $(BASE_DIR)/data
-export DATA_DEPS := $(DATA_BASE)/data_ok
 DATA_TAR_GZ := $(DATA_BASE)/data.tar.gz
 
 # External definitions
@@ -138,6 +137,7 @@ export TBB_DEPS := $(TBB_LIB)
 export TBB_CXXFLAGS := -isystem $(TBB_BASE)/include -DTBB_SUPPRESS_DEPRECATED_MESSAGES -DTBB_PREVIEW_NUMA_SUPPORT -DTBB_PREVIEW_TASK_GROUP_EXTENSIONS
 export TBB_LDFLAGS := -L$(TBB_LIBDIR) -ltbb
 export TBB_NVCC_CXXFLAGS :=
+export TBB_SYCL_CXXFLAGS :=
 # The libstdc++ library used by the devtools on RHEL 7 / CentOS 7 requires a workaround because
 # some STL containers do not support the allocator traits, even when using more recent compilers
 ifneq ($(shell [ -f /etc/redhat-release ] && grep -q 'release 7' /etc/redhat-release && which $(CXX) | grep devtoolset),)
@@ -151,6 +151,7 @@ export EIGEN_CXXFLAGS := -isystem $(EIGEN_BASE) -DEIGEN_DONT_PARALLELIZE
 export EIGEN_LDFLAGS :=
 export EIGEN_NVCXX_CXXFLAGS := -DEIGEN_USE_GPU -DEIGEN_UNROLLING_LIMIT=64
 export EIGEN_NVCC_CXXFLAGS := --diag-suppress 20014
+export EIGEN_SYCL_CXXFLAGS := -DEIGEN_USE_SYCL -fsycl-enable-function-pointers
 
 BOOST_BASE := /usr
 # Minimum required version of Boost, e.g. 1.78.0
@@ -168,11 +169,13 @@ export BOOST_DEPS := $(BOOST_BASE)
 export BOOST_CXXFLAGS := -isystem $(BOOST_BASE)/include
 export BOOST_LDFLAGS := -L$(BOOST_BASE)/lib
 export BOOST_NVCC_CXXFLAGS :=
+export BOOST_SYCL_CXXFLAGS :=
 
 BACKTRACE_BASE := $(EXTERNAL_BASE)/libbacktrace
 export BACKTRACE_DEPS := $(BACKTRACE_BASE)
 export BACKTRACE_CXXFLAGS := -isystem $(BACKTRACE_BASE)/include
 export BACKTRACE_LDFLAGS := -L$(BACKTRACE_BASE)/lib -lbacktrace
+export BACKTRACE_SYCL_CXXFLAGS :=
 
 ALPAKA_BASE := $(EXTERNAL_BASE)/alpaka
 export ALPAKA_DEPS := $(ALPAKA_BASE)
@@ -274,13 +277,14 @@ endif
 export KOKKOS_DEPS := $(KOKKOS_LIB)
 
 # Intel oneAPI
-ONEAPI_BASE := /opt/intel/oneapi
+ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
 ifneq ($(wildcard $(ONEAPI_BASE)),)
 # OneAPI platform found
+SYCL_VERSION  := 2022.1.0
 ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
-DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/latest
-SYCL_BASE     := $(ONEAPI_BASE)/compiler/latest/linux
-DPCT_CXXFLAGS := -isystem $(DPCT_BASE)/include
+DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/$(SYCL_VERSION)
+SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
+DPCT_CXXFLAGS := -Wsycl-strict -isystem $(DPCT_BASE)/include
 endif
 SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
 
@@ -501,9 +505,9 @@ distclean: | clean
 	rm -fR $(EXTERNAL_BASE) .original_env
 
 dataclean:
-	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.csv $(DATA_BASE)/data_ok
+	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.csv 
 
-define CLEAN_template
+define CLEAN_template 
 clean_$(1):
 	rm -fR $(LIB_DIR)/$(1) $(OBJ_DIR)/$(1) $(TEST_DIR)/$(1) $(1)
 endef
@@ -549,10 +553,11 @@ external_eigen: $(EIGEN_BASE)
 
 $(EIGEN_BASE):
 	# from Eigen master branch as of 2021.08.18
-	git clone -b cms/master/82dd3710dac619448f50331c1d6a35da673f764a https://github.com/cms-externals/eigen-git-mirror.git $@
+	#git clone -b cms/master/82dd3710dac619448f50331c1d6a35da673f764a https://github.com/cms-externals/eigen-git-mirror.git $@
+	git clone https://gitlab.com/libeigen/eigen.git $@
 	# include all Patatrack updates
-	cd $@ && git reset --hard 6294f3471cc18068079ec6af8ceccebe34b40021
-
+	#cd $@ && git reset --hard 6294f3471cc18068079ec6af8ceccebe34b40021
+	cd $@ && git reset --hard 34780d8bd13d0af0cf17a22789ef286e8512594d
 # Boost
 .PHONY: external_boost
 external_boost: $(BOOST_BASE)
