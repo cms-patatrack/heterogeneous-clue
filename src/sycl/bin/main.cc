@@ -104,15 +104,14 @@ int main(int argc, char** argv) try {
   std::vector<std::string> edmodules;
   std::vector<std::string> esmodules;
   if (not empty) {
-    edmodules = {"TestProducer", "TestProducer3", "TestProducer2"};
-    esmodules = {"IntESProducer"};
+    edmodules = {"PointsCloudToSYCL"};
+    esmodules = {"PointsCloudESProducer"};
     if (transfer) {
       // add modules for transfer
     }
   }
   edm::EventProcessor processor(
       maxEvents, runForMinutes, numberOfStreams, std::move(edmodules), std::move(esmodules), datadir, validation);
-
   if (runForMinutes < 0) {
     std::cout << "Processing " << processor.maxEvents() << " events, of which " << numberOfStreams
               << " concurrently, with " << numberOfThreads << " threads." << std::endl;
