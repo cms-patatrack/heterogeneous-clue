@@ -26,10 +26,8 @@ endif
 USER_CXXFLAGS :=
 HOST_CXXFLAGS := -O2 -fPIC -fdiagnostics-show-option -felide-constructors -fmessage-length=0 -fno-math-errno -ftree-vectorize -fvisibility-inlines-hidden --param vect-max-version-for-alias-checks=50 -msse3 -pipe -pthread -Werror=address -Wall -Werror=array-bounds -Wno-attributes -Werror=conversion-null -Werror=delete-non-virtual-dtor -Wno-deprecated -Werror=format-contains-nul -Werror=format -Wno-long-long -Werror=main -Werror=missing-braces -Werror=narrowing -Wno-non-template-friend -Wnon-virtual-dtor -Werror=overflow -Werror=overlength-strings -Wparentheses -Werror=pointer-arith -Wno-psabi -Werror=reorder -Werror=return-local-addr -Wreturn-type -Werror=return-type -Werror=sign-compare -Werror=strict-aliasing -Wstrict-overflow -Werror=switch -Werror=type-limits -Wunused -Werror=unused-but-set-variable -Wno-unused-local-typedefs -Werror=unused-value -Wno-error=unused-variable -Wno-vla -Werror=write-strings -Wfatal-errors
 export CXXFLAGS := -std=c++17 $(HOST_CXXFLAGS) $(USER_CXXFLAGS) -g
-export NVCXX_CXXFLAGS := -std=c++20 -O0 -cuda -gpu=managed -stdpar -fpic -gopt $(USER_CXXFLAGS)
 export LDFLAGS := -O2 -fPIC -pthread -Wl,-E -lstdc++fs -ldl
 export LDFLAGS_NVCC := -ccbin $(CXX) --linker-options '-E' --linker-options '-lstdc++fs'
-export LDFLAGS_NVCXX := -cuda -Wl,-E -ldl
 export SO_LDFLAGS := -Wl,-z,defs
 export SO_LDFLAGS_NVCC := --linker-options '-z,defs'
 
@@ -78,21 +76,6 @@ export CUDA_CUFLAGS
 export CUDA_DLINKFLAGS
 endif
 
-#Nvidia HPC sdk
-NVHPC_BASE := /opt/nvidia/hpc_sdk/Linux_x86_64/22.7
-ifeq ($(wildcard $(NVHPC_BASE)),)
-# HPC sdk not found
-NVHPC_BASE :=
-else
-USER_NVHPCFLAGS :=
-export NVHPC_BASE
-export NVHPC_DEPS :=
-export NVHPC_NVCXXFLAGS := 
-export NVHPC_TEST_NVCXXFLAGS := -DGPU_DEBUG
-export NVHPC_LDFLAGS := 
-export NVCXX := $(NVHPC_BASE)/compilers/bin/nvc++
-endif
-
 # ROCm
 ROCM_BASE := /opt/rocm-5.0.2
 ifeq ($(wildcard $(ROCM_BASE)),)
@@ -115,7 +98,9 @@ endif
 
 # Input data definitions
 DATA_BASE := $(BASE_DIR)/data
+export DATA_DEPS := $(DATA_BASE)/data_ok
 DATA_TAR_GZ := $(DATA_BASE)/data.tar.gz
+DATA_CLUE_TAR_GZ := $(DATA_BASE)/data_clue.tar.gz
 
 # External definitions
 EXTERNAL_BASE := $(BASE_DIR)/external
@@ -149,7 +134,6 @@ EIGEN_BASE := $(EXTERNAL_BASE)/eigen
 export EIGEN_DEPS := $(EIGEN_BASE)
 export EIGEN_CXXFLAGS := -isystem $(EIGEN_BASE) -DEIGEN_DONT_PARALLELIZE
 export EIGEN_LDFLAGS :=
-export EIGEN_NVCXX_CXXFLAGS := -DEIGEN_USE_GPU -DEIGEN_UNROLLING_LIMIT=64
 export EIGEN_NVCC_CXXFLAGS := --diag-suppress 20014
 export EIGEN_SYCL_CXXFLAGS := -DEIGEN_USE_SYCL -fsycl-enable-function-pointers
 
@@ -278,6 +262,8 @@ export KOKKOS_DEPS := $(KOKKOS_LIB)
 
 # Intel oneAPI
 ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
+# /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
+# /opt/intel/oneapi
 ifneq ($(wildcard $(ONEAPI_BASE)),)
 # OneAPI platform found
 SYCL_VERSION  := 2022.1.0
@@ -326,16 +312,15 @@ $(foreach target,$(TARGETS_ALL),$(eval $(call TARGET_ALL_DEPS_template,$(target)
 TARGETS_CUDA :=
 TARGETS_ROCM :=
 TARGETS_SYCL :=
-TARGETS_NVHPC :=
 define SPLIT_TARGETS_template
 ifneq ($$(filter $(1),$$($(2)_EXTERNAL_DEPENDS)),)
   TARGETS_$(1) += $(2)
 endif
 endef
-TOOLCHAINS := CUDA ROCM SYCL NVHPC
+TOOLCHAINS := CUDA ROCM SYCL
 $(foreach toolchain,$(TOOLCHAINS),$(foreach target,$(TARGETS_ALL),$(eval $(call SPLIT_TARGETS_template,$(toolchain),$(target)))))
 
-TARGETS_GCC := $(filter-out $(TARGETS_CUDA) $(TARGETS_ROCM) $(TARGETS_SYCL) $(TARGETS_NVHPC),$(TARGETS_ALL))
+TARGETS_GCC := $(filter-out $(TARGETS_CUDA) $(TARGETS_ROCM) $(TARGETS_SYCL),$(TARGETS_ALL))
 
 # Re-construct targets based on available compilers/toolchains
 TARGETS := $(TARGETS_GCC)
@@ -347,9 +332,6 @@ TARGETS += $(TARGETS_ROCM)
 endif
 ifdef SYCL_BASE
 TARGETS += $(TARGETS_SYCL)
-endif
-ifdef NVHPC_BASE
-TARGETS += $(TARGETS_NVHPC)
 endif
 # remove possible duplicates
 TARGETS := $(sort $(TARGETS))
@@ -505,9 +487,9 @@ distclean: | clean
 	rm -fR $(EXTERNAL_BASE) .original_env
 
 dataclean:
-	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.csv 
+	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.bin $(DATA_BASE)/data_ok
 
-define CLEAN_template 
+define CLEAN_template
 clean_$(1):
 	rm -fR $(LIB_DIR)/$(1) $(OBJ_DIR)/$(1) $(TEST_DIR)/$(1) $(1)
 endef
@@ -516,11 +498,20 @@ $(foreach target,$(TARGETS_ALL),$(eval $(call CLEAN_template,$(target))))
 # Data rules
 $(DATA_DEPS): $(DATA_TAR_GZ) | $(DATA_BASE)/md5.txt
 	cd $(DATA_BASE) && tar zxf $(DATA_TAR_GZ)
-	cd $(DATA_BASE) && md5sum *.csv | diff -u md5.txt -
+	cd $(DATA_BASE) && md5sum *.bin | diff -u md5.txt -
 	touch $(DATA_DEPS)
 
 $(DATA_TAR_GZ): | $(DATA_BASE)/url.txt
 	curl -L -s -S $(shell cat $(DATA_BASE)/url.txt) -o $@
+
+# CLUE data rules
+$(CLUE_DATA_DEPS): $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5_clue.txt
+	cd $(DATA_BASE) && tar zxf $(DATA_CLUE_TAR_GZ)
+	cd $(DATA_BASE) && md5sum *.csv | diff -u md5_clue.txt -
+	touch $(CLUE_DATA_DEPS)
+
+$(DATA_CLUE_TAR_GZ): | $(DATA_BASE)/url_clue.txt
+	curl -L -s -S $(shell cat $(DATA_BASE)/url_clue.txt) -o $@
 
 # External rules
 $(EXTERNAL_BASE):
