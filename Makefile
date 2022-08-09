@@ -487,7 +487,7 @@ distclean: | clean
 	rm -fR $(EXTERNAL_BASE) .original_env
 
 dataclean:
-	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.bin $(DATA_BASE)/data_ok $(DATA_BASE)/*.csv
+	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.bin $(DATA_BASE)/data_ok $(DATA_BASE)/input/*.csv
 
 define CLEAN_template
 clean_$(1):
@@ -496,17 +496,18 @@ endef
 $(foreach target,$(TARGETS_ALL),$(eval $(call CLEAN_template,$(target))))
 
 # Data rules
-$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/md5_clue.txt
-	cd $(DATA_BASE) && tar zxf $(DATA_TAR_GZ) && tar zxf $(DATA_CLUE_TAR_GZ)
+$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/input/md5_clue.txt
+	cd $(DATA_BASE) && tar zxf $(DATA_TAR_GZ)
 	cd $(DATA_BASE) && md5sum *.bin | diff -u md5.txt -
-	cd $(DATA_BASE) && md5sum *.csv | diff -u md5_clue.txt -
+	cd $(DATA_BASE)/input && tar zxf $(DATA_CLUE_TAR_GZ)
+	cd $(DATA_BASE)/input && md5sum *.csv | diff -u md5_clue.txt -
 	touch $(DATA_DEPS)
 
 $(DATA_TAR_GZ): | $(DATA_BASE)/url.txt
 	curl -L -s -S $(shell cat $(DATA_BASE)/url.txt) -o $@
 
-$(DATA_CLUE_TAR_GZ): | $(DATA_BASE)/url_clue.txt
-	curl -L -s -S $(shell cat $(DATA_BASE)/url_clue.txt) -o $@
+$(DATA_CLUE_TAR_GZ): | $(DATA_BASE)/input/url_clue.txt
+	curl -L -s -S $(shell cat $(DATA_BASE)/input/url_clue.txt) -o $@
 
 # External rules
 $(EXTERNAL_BASE):
