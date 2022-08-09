@@ -10,7 +10,9 @@
 # data
 /data/*.tar.gz
 /data/*.bin
-/data/*.csv
+/data/input/*.csv
+/data/output/*.csv
+/data/data_ok
 # build targets
 /alpaka
 /alpakatest
@@ -25,6 +27,7 @@
 /kokkos
 /kokkostest
 /serial
+/sycl
 /sycltest
 #dev
 /.vscode
