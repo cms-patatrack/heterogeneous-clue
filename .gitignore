@@ -27,6 +27,7 @@
 /kokkos
 /kokkostest
 /serial
+/sycl
 /sycltest
 #dev
 /.vscode
