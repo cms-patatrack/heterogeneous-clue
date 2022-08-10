@@ -24,16 +24,14 @@ private:
 };
 
 PointsCloudToSYCL::PointsCloudToSYCL(edm::ProductRegistry& reg)
-    :
-
-      pcPutToken_(reg.produces<cms::sycltools::Product<PointsCloudSYCL>>()) {}
+    : pcPutToken_(reg.produces<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
 void PointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
   cms::sycltools::ScopedContextProduce ctx(event.streamID());
-  sycl::queue stream = ctx.stream();
-  PointsCloudSYCL pcDevice(stream);
   auto pcHost = std::make_unique<PointsCloud>();
   *pcHost = eventSetup.get<PointsCloud>();
+  sycl::queue stream = ctx.stream();
+  PointsCloudSYCL pcDevice(stream, pcHost->n);
   stream.memcpy(pcDevice.x.get(), pcHost->x.data(), sizeof(float) * pcHost->n);
   stream.memcpy(pcDevice.y.get(), pcHost->y.data(), sizeof(float) * pcHost->n);
   stream.memcpy(pcDevice.layer.get(), pcHost->layer.data(), sizeof(int) * pcHost->n);
@@ -43,7 +41,6 @@ void PointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup const& eventS
   stream.memset(pcDevice.nearestHigher.get(), 0x00, sizeof(int) * pcHost->n);
   stream.memset(pcDevice.clusterIndex.get(), 0x00, sizeof(int) * pcHost->n);
   stream.memset(pcDevice.isSeed.get(), 0x00, sizeof(int) * pcHost->n).wait();
-  pcDevice.n = pcHost->n;
 
   ctx.emplace(event, pcPutToken_, std::move(pcDevice));
 }
