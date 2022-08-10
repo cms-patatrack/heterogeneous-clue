@@ -1,4 +1,5 @@
 sycl_EXTERNAL_DEPENDS := TBB SYCL
 SYCLCore_DEPENDS := Framework
-PointsLoader_DEPENDS := Framework SYCLCore DataFormats SYCLDataFormats
-PointsLoaderValidator_DEPENDS := Framework SYCLCore DataFormats SYCLDataFormats
+PointsLoader_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats 
+PointsLoaderValidator_DEPENDS := Framework SYCLCore SYCLDataFormats DataFormats
+CLUEClusterizer_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats 
