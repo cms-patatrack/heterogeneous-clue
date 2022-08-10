@@ -6,7 +6,6 @@
 #include "DataFormats/LayerTilesConstants.h"
 #include "ValidatorData.h"
 
-
 class ValidatorPointsCloudESProducer : public edm::ESProducer {
 public:
   ValidatorPointsCloudESProducer(std::filesystem::path const& datadir) : data_{datadir} {}

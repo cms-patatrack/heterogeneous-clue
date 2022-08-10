@@ -20,7 +20,7 @@ public:
 
 private:
   void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
-  template<class T>
+  template <class T>
   bool arraysAreEqual(T* devicePtr, std::vector<T> trueDataArr, int n, sycl::queue stream);
   edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> tokenPC_;
 };
@@ -28,14 +28,14 @@ private:
 ValidatorPointsCloudToSYCL::ValidatorPointsCloudToSYCL(edm::ProductRegistry& reg)
     : tokenPC_(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
-template<class T>
+template <class T>
 bool ValidatorPointsCloudToSYCL::arraysAreEqual(T* devicePtr, std::vector<T> trueDataArr, int n, sycl::queue stream) {
   bool sameValue = true;
 
   T* host = new T[n];
-  stream.memcpy(host, devicePtr, sizeof(T)*n);
+  stream.memcpy(host, devicePtr, sizeof(T) * n).wait();
 
-  for(int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     if (host[i] != trueDataArr[i]) {
       sameValue = false;
       break;
@@ -44,54 +44,44 @@ bool ValidatorPointsCloudToSYCL::arraysAreEqual(T* devicePtr, std::vector<T> tru
 
   delete[] host;
 
-    return sameValue;
+  return sameValue;
 }
 
 void ValidatorPointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
   auto pcTrueData = std::make_unique<ValidatorPointsCloud>();
   *pcTrueData = eventSetup.get<ValidatorPointsCloud>();
-  
+
   auto const& pcDeviceProduct = event.get(tokenPC_);
   cms::sycltools::ScopedContextProduce ctx{pcDeviceProduct};
   auto const& pcDevice = ctx.get(pcDeviceProduct);
 
-  std::cout << "Checking pcDevice.n=" << pcDevice.n << "  ==   pcTrueData.n=" << pcTrueData->n << std::endl;
+  std::cout << "Checking data on device" << '\n';
+
   assert(pcDevice.n == pcTrueData->n);
-  
-  std::cout << "Are device and trueData x's equal?\n";
+  std::cout << "Number of points -> Ok" << '\n';
   assert(arraysAreEqual(pcDevice.x.get(), pcTrueData->x, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device and trueData y's equal?\n";
+  std::cout << "x -> Ok" << '\n';
   assert(arraysAreEqual(pcDevice.y.get(), pcTrueData->y, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device and trueData layer's equal?\n";
+  std::cout << "y -> Ok" << '\n';
   assert(arraysAreEqual(pcDevice.layer.get(), pcTrueData->layer, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device and trueData weight's equal?\n";
+  std::cout << "layer -> Ok" << '\n';
   assert(arraysAreEqual(pcDevice.weight.get(), pcTrueData->weight, pcDevice.n, ctx.stream()));
+  std::cout << "weight -> Ok" << '\n';
 
   std::vector<float> fZeros(pcDevice.n, 0);
   std::vector<int> iZeros(pcDevice.n, 0);
 
-  std::cout << "Are device  rho initially 0?\n";
   assert(arraysAreEqual(pcDevice.rho.get(), fZeros, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device  delta initially 0?\n";
+  std::cout << "rho correctly initialised to 0" << '\n';
   assert(arraysAreEqual(pcDevice.delta.get(), fZeros, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device nearestHigher initially 0?\n";
+  std::cout << "delta correctly initialised to 0" << '\n';
   assert(arraysAreEqual(pcDevice.nearestHigher.get(), iZeros, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device clusterIndex initially 0?\n";
+  std::cout << "nearestHigher correctly initialised to 0" << '\n';
   assert(arraysAreEqual(pcDevice.clusterIndex.get(), iZeros, pcDevice.n, ctx.stream()));
-
-  std::cout << "Are device clusterIndex initially 0?\n";
+  std::cout << "clusterIndex correctly initialised to 0" << '\n';
   assert(arraysAreEqual(pcDevice.isSeed.get(), iZeros, pcDevice.n, ctx.stream()));
-
-  // std::cout << "Printing x's\n";
-  // for (int i = 0; i < 10; i++) {
-  //   std::cout << "x[" << i << "]=" << pcDevice.x[i] << "\n";
-  // }
-
+  std::cout << "isSeed correctly initialised to 0" << '\n';
+  
+  std::cout << "Data copied correctly" << std::endl;
 }
 DEFINE_FWK_MODULE(ValidatorPointsCloudToSYCL);
