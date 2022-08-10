@@ -104,8 +104,8 @@ int main(int argc, char** argv) try {
   std::vector<std::string> edmodules;
   std::vector<std::string> esmodules;
   if (not empty) {
-    edmodules = {"PointsCloudToSYCL", "CLUESYCLClusterizer"};
-    esmodules = {"PointsCloudESProducer"};
+    edmodules = { "PointsCloudToSYCL" };
+    esmodules = {"PointsCloudESProducer" };
     if (transfer) {
       // add modules for transfer
     }
