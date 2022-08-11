@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 #include <tbb/global_control.h>
 #include <tbb/info.h>
@@ -23,6 +24,8 @@ namespace {
         << ": [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
+        << "--device             Specifies the device which should run the code (default not set. Possibilities are: "
+           "cpu, gpu or acc\n"
         << " --numberOfThreads   Number of threads to use (default 1, use 0 to use all CPU cores)\n"
         << " --numberOfStreams   Number of concurrent events (default 0 = numberOfThreads)\n"
         << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
@@ -51,6 +54,10 @@ int main(int argc, char** argv) try {
     if (*i == "-h" or *i == "--help") {
       print_help(args.front());
       return EXIT_SUCCESS;
+    } else if (*i == "--device") {
+      ++i;
+      std::string device = *i;
+      setenv("SYCL_DEVICE_FILTER", device.c_str(), true);
     } else if (*i == "--numberOfThreads") {
       ++i;
       numberOfThreads = std::stoi(*i);
@@ -175,6 +182,7 @@ int main(int argc, char** argv) try {
   std::cout << "Processed " << maxEvents << " events in " << std::scientific << time << " seconds, throughput "
             << std::defaultfloat << (maxEvents / time) << " events/s, CPU usage per thread: " << std::fixed
             << std::setprecision(1) << (cpu / time / numberOfThreads * 100) << "%" << std::endl;
+  unsetenv("SYCL_DEVICE_FILTER");
   return EXIT_SUCCESS;
 } catch (sycl::exception const& exc) {
   std::cerr << exc.what() << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
