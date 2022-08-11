@@ -8,6 +8,7 @@
 #include "SYCLCore/ScopedContext.h"
 
 #include "SYCLDataFormats/PointsCloudSYCL.h"
+#include "SYCLDataFormats/ClusteredPointsCloudSYCL.h"
 #include "CLUEAlgoSYCL.h"
 
 class CLUESYCLClusterizer : public edm::EDProducer {
@@ -19,12 +20,12 @@ private:
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
 
   edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> tokenPointsCloudSYCL_;
-  edm::EDPutTokenT<PointsCloudSYCL> tokenClusters_;
+  edm::EDPutTokenT<cms::sycltools::Product<ClusteredPointsCloudSYCL>> tokenClusters_;
 };
 
 CLUESYCLClusterizer::CLUESYCLClusterizer(edm::ProductRegistry& reg)
     : tokenPointsCloudSYCL_{reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()},
-      tokenClusters_{reg.produces<PointsCloudSYCL>()} {}
+      tokenClusters_{reg.produces<cms::sycltools::Product<ClusteredPointsCloudSYCL>>()} {}
 
 void CLUESYCLClusterizer::produce(edm::Event& event, const edm::EventSetup& eventSetup) {
   auto const& pcProduct = event.get(tokenPointsCloudSYCL_);
@@ -37,7 +38,9 @@ void CLUESYCLClusterizer::produce(edm::Event& event, const edm::EventSetup& even
   CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, stream);
   auto data = clueAlgo.makeClusters(pc);
 
-  ctx.emplace(event, tokenClusters_, std::move(data));
+  ClusteredPointsCloudSYCL cpc(pc);
+
+  ctx.emplace(event, tokenClusters_, std::move(cpc));
 }
 
 DEFINE_FWK_MODULE(CLUESYCLClusterizer);
