@@ -13,7 +13,6 @@
 
 // #include "DataFormats/PointsCloud.h"
 #include "SYCLDataFormats/PointsCloudSYCL.h"
-#include "SYCLDataFormats/ClusteredPointsCloudSYCL.h"
 #include "CLUEValidatorTypes.h"
 // #include "ValidatorData.h"
 
@@ -25,11 +24,11 @@ private:
   void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
   template <class T>
   bool arraysAreEqual(T* devicePtr, std::vector<T> trueDataArr, int n, sycl::queue stream);
-  edm::EDGetTokenT<cms::sycltools::Product<ClusteredPointsCloudSYCL>> tokenPC_;
+  edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> tokenPC_;
 };
 
 CLUEValidator::CLUEValidator(edm::ProductRegistry& reg)
-  : tokenPC_(reg.consumes<cms::sycltools::Product<ClusteredPointsCloudSYCL>>()) {}
+  : tokenPC_(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
 template <class T>
 bool CLUEValidator::arraysAreEqual(T* devicePtr, std::vector<T> trueDataArr, int n, sycl::queue stream) {
@@ -54,45 +53,41 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
   auto outDataDir = std::make_unique<OutputDirPath>();
   *outDataDir = eventSetup.get<OutputDirPath>();
 
-  auto const& cpcDeviceProduct = event.get(tokenPC_);
-  cms::sycltools::ScopedContextProduce ctx{cpcDeviceProduct};
-  auto const& cpcDevice = ctx.get(cpcDeviceProduct);
+  auto const& pcProduct = event.get(tokenPC_);
+  cms::sycltools::ScopedContextProduce ctx{pcProduct};
+  auto const& pcDevice = ctx.get(pcProduct);
 
-  auto pc = new PointsCloudSYCL::PointsCloudSYCLView[1];
   auto stream = ctx.stream();
 
-  stream.memcpy(pc, cpcDevice.clusterdPointsData_.get(), 1*sizeof(PointsCloudSYCL::PointsCloudSYCLView))
-    .wait();
-
-  std::cout << "Num of points: " << pc->n << std::endl;
+  std::cout << "Num of points: " << pcDevice.n << std::endl;
 
   std::cout << "Saving into " << outDataDir->path_ / "clue_output.csv" << std::endl;
   std::ofstream clueOut(outDataDir->path_ / "clue_output.csv");
 
   clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
 
-  auto x = new float[pc->n];
-  auto y = new float[pc->n];
-  auto layer = new int[pc->n];
-  auto weight = new float[pc->n];
-  auto rho = new float[pc->n];
-  auto delta = new float[pc->n];
-  auto nearestHigher = new int[pc->n];
-  auto isSeed = new int[pc->n];
-  auto clusterIndex = new int[pc->n];
-  stream.memcpy(x, pc->x, pc->n*sizeof(float));
-  stream.memcpy(y, pc->y, pc->n*sizeof(float));
-  stream.memcpy(layer, pc->layer, pc->n*sizeof(int));
-  stream.memcpy(weight, pc->weight, pc->n*sizeof(float));
-  stream.memcpy(rho, pc->rho, pc->n*sizeof(float));
-  stream.memcpy(delta, pc->delta, pc->n*sizeof(float));
-  stream.memcpy(nearestHigher, pc->nearestHigher, pc->n*sizeof(int));
-  stream.memcpy(isSeed, pc->isSeed, pc->n*sizeof(int));
-  stream.memcpy(clusterIndex, pc->clusterIndex, pc->n*sizeof(int))
+  auto x = new float[pcDevice.n];
+  auto y = new float[pcDevice.n];
+  auto layer = new int[pcDevice.n];
+  auto weight = new float[pcDevice.n];
+  auto rho = new float[pcDevice.n];
+  auto delta = new float[pcDevice.n];
+  auto nearestHigher = new int[pcDevice.n];
+  auto isSeed = new int[pcDevice.n];
+  auto clusterIndex = new int[pcDevice.n];
+  stream.memcpy(x, pcDevice.x.get(), pcDevice.n*sizeof(float));
+  stream.memcpy(y, pcDevice.y.get(), pcDevice.n*sizeof(float));
+  stream.memcpy(layer, pcDevice.layer.get(), pcDevice.n*sizeof(int));
+  stream.memcpy(weight, pcDevice.weight.get(), pcDevice.n*sizeof(float));
+  stream.memcpy(rho, pcDevice.rho.get(), pcDevice.n*sizeof(float));
+  stream.memcpy(delta, pcDevice.delta.get(), pcDevice.n*sizeof(float));
+  stream.memcpy(nearestHigher, pcDevice.nearestHigher.get(), pcDevice.n*sizeof(int));
+  stream.memcpy(isSeed, pcDevice.isSeed.get(), pcDevice.n*sizeof(int));
+  stream.memcpy(clusterIndex, pcDevice.clusterIndex.get(), pcDevice.n*sizeof(int))
     .wait();
 
 
-  for (int i = 0; i < pc->n; i++) {
+  for (int i = 0; i < pcDevice.n; i++) {
     clueOut << i << ","
               << x[i] << "," << y[i] << ","
               << layer[i] << "," << weight[i] << ","
@@ -102,16 +97,16 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
   }
 
   clueOut.close();
-  // sycl::free(x, stream);
-  // sycl::free(y, stream);
-  // sycl::free(layer, stream);
-  // sycl::free(weight, stream);
-  // sycl::free(rho, stream);
-  // sycl::free(delta, stream);
-  // sycl::free(nearestHigher, stream);
-  // sycl::free(isSeed, stream);
-  // sycl::free(clusterIndex, stream);
-  delete[] pc;
+
+  delete[] x;
+  delete[] y;
+  delete[] layer;
+  delete[] weight;
+  delete[] rho;
+  delete[] delta;
+  delete[] nearestHigher;
+  delete[] isSeed;
+  delete[] clusterIndex;
 
 //   std::cout << "Checking data on device" << '\n';
 
@@ -140,6 +135,6 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
 //   assert(arraysAreEqual(pcDevice.isSeed.get(), iZeros, pcDevice.n, ctx.stream()));
 //   std::cout << "isSeed correctly initialised to 0" << '\n';
   
-  std::cout << "Data copied correctly" << std::endl;
+  std::cout << "Results were saved!" << std::endl;
 }
 DEFINE_FWK_MODULE(CLUEValidator);
