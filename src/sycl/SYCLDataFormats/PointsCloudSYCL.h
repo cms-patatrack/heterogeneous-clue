@@ -38,7 +38,7 @@ public:
     view->isSeed = isSeed.get();
     view->n = numberOfPoints;
 
-    auto view_d = cms::sycltools::make_device_shared<PointsCloudSYCLView>(stream);
+    view_d = cms::sycltools::make_device_shared<PointsCloudSYCLView>(stream);
     stream.memcpy(view_d.get(), view.get(), sizeof(PointsCloudSYCLView)).wait();
   }
   PointsCloudSYCL(PointsCloudSYCL const &pc) = default;

@@ -20,7 +20,7 @@ public:
   ~CLUEAlgoSYCL() = default;
 
   using view = PointsCloudSYCL::PointsCloudSYCLView;
-  view* makeClusters(PointsCloudSYCL const& pc);
+  void makeClusters(PointsCloudSYCL const& pc);
 
 private:
   float dc_;

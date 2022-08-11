@@ -18,7 +18,7 @@ CLUEAlgoSYCL::CLUEAlgoSYCL(float dc, float rhoc, float outlierDeltaFactor, sycl:
 
 using view = PointsCloudSYCL::PointsCloudSYCLView;
 
-view* CLUEAlgoSYCL::makeClusters(PointsCloudSYCL const& pc) {
+void CLUEAlgoSYCL::makeClusters(PointsCloudSYCL const& pc) {
   // calculate rho, delta and find seeds
   // 1 point per thread
   auto d_points = pc.view();
@@ -72,6 +72,6 @@ view* CLUEAlgoSYCL::makeClusters(PointsCloudSYCL const& pc) {
     cgh.parallel_for(sycl::nd_range<3>(gridSize_nseeds * blockSize, blockSize), [=](sycl::nd_item<3> item) {
       kernel_assign_clusters(d_seeds_kernel, d_followers_kernel, d_points, item);
     });
-  });
-  return d_points;
+  })
+  .wait();
 }

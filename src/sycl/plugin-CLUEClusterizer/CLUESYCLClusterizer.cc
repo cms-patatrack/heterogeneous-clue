@@ -1,5 +1,4 @@
 #include <CL/sycl.hpp>
-
 #include "SYCLCore/Product.h"
 #include "Framework/EventSetup.h"
 #include "Framework/Event.h"
@@ -36,7 +35,7 @@ void CLUESYCLClusterizer::produce(edm::Event& event, const edm::EventSetup& even
   float rhoc = 25;
   float outlierDeltaFactor = 2;
   CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, stream);
-  auto data = clueAlgo.makeClusters(pc);
+  clueAlgo.makeClusters(pc);
 
   ClusteredPointsCloudSYCL cpc(pc);
 
