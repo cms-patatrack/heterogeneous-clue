@@ -44,13 +44,13 @@ public:
       t.reset();
   }
 
-  sycltools::VecArray<int, LayerTilesConstants::maxTileDepth> &operator[](int globalBinId) {
+  cms::sycltools::VecArray<int, LayerTilesConstants::maxTileDepth> &operator[](int globalBinId) {
     return layerTiles_[globalBinId];
   }
 
 private:
-  sycltools::VecArray<sycltools::VecArray<int, LayerTilesConstants::maxTileDepth>,
-                      LayerTilesConstants::nColumns * LayerTilesConstants::nRows>
+  cms::sycltools::VecArray<cms::sycltools::VecArray<int, LayerTilesConstants::maxTileDepth>,
+                           LayerTilesConstants::nColumns * LayerTilesConstants::nRows>
       layerTiles_;
 };
 #endif
