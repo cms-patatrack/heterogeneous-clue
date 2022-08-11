@@ -288,7 +288,7 @@ else
 SYCL_BASE :=
 endif
 endif
-USER_SYCLFLAGS :=
+USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
 ifdef SYCL_BASE
 export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
 export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
