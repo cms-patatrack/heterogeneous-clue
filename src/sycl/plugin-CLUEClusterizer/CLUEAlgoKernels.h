@@ -2,22 +2,23 @@
 #define CLUE_ALGO_KERNELS_H
 
 #include <CL/sycl.hpp>
-#include "DataFormats/LayerTilesSYCL.h"
+#include "SYCLDataFormats/LayerTilesSYCL.h"
 #include "SYCLDataFormats/PointsCloudSYCL.h"
 
 using view = PointsCloudSYCL::PointsCloudSYCLView;
 
-void kernel_compute_histogram(LayerTilesSYCL *d_hist, view *d_points, sycl::nd_item<3> item) {
+void kernel_compute_histogram(LayerTilesSYCL *d_hist, view *d_points, int const &numberOfPoints, sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
-  if (i < d_points->n) {
+  if (i < numberOfPoints) {
     // push index of points into tiles
     d_hist[d_points->layer[i]].fill(d_points->x[i], d_points->y[i], i);
   }
 }
 
-void kernel_calculate_density(LayerTilesSYCL *d_hist, view *d_points, float dc, sycl::nd_item<3> item) {
+void kernel_calculate_density(
+    LayerTilesSYCL *d_hist, view *d_points, float dc, int const &numberOfPoints, sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
-  if (i < d_points->n) {
+  if (i < numberOfPoints) {
     double rhoi{0.};
     int layeri = d_points->layer[i];
     float xi = d_points->x[i];
@@ -47,11 +48,15 @@ void kernel_calculate_density(LayerTilesSYCL *d_hist, view *d_points, float dc, 
   }
 }
 
-void kernel_calculate_distanceToHigher(
-    LayerTilesSYCL *d_hist, view *d_points, float outlierDeltaFactor, float dc, sycl::nd_item<3> item) {
+void kernel_calculate_distanceToHigher(LayerTilesSYCL *d_hist,
+                                       view *d_points,
+                                       float outlierDeltaFactor,
+                                       float dc,
+                                       int const &numberOfPoints,
+                                       sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   float dm = outlierDeltaFactor * dc;
-  if (i < d_points->n) {
+  if (i < numberOfPoints) {
     int layeri = d_points->layer[i];
     float deltai = std::numeric_limits<float>::max();
     int nearestHigheri = -1;
@@ -94,15 +99,16 @@ void kernel_calculate_distanceToHigher(
   }
 }
 
-void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds,
-                          sycltools::VecArray<int, maxNFollowers> *d_followers,
+void kernel_find_clusters(cms::sycltools::VecArray<int, maxNSeeds> *d_seeds,
+                          cms::sycltools::VecArray<int, maxNFollowers> *d_followers,
                           view *d_points,
                           float outlierDeltaFactor,
                           float dc,
                           float rhoc,
-                          sycl::nd_item<3> item) {
+                          int const &numberOfPoints,
+                          sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
-  if (i < d_points->n) {
+  if (i < numberOfPoints) {
     // initialize clusterIndex
     d_points->clusterIndex[i] = -1;
     // determine seed or outlier
@@ -117,7 +123,7 @@ void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds,
       d_seeds[0].push_back(i);  // head of d_seeds
     } else {
       if (!isOutlier) {
-        assert(d_points->nearestHigher[i] < d_points->n);
+        assert(d_points->nearestHigher[i] < numberOfPoints);
         // register as follower of its nearest higher
         d_followers[d_points->nearestHigher[i]].push_back(i);
       }
@@ -125,10 +131,10 @@ void kernel_find_clusters(sycltools::VecArray<int, maxNSeeds> *d_seeds,
   }
 }
 
-void kernel_assign_clusters(const sycltools::VecArray<int, maxNSeeds> *d_seeds,
-                            const sycltools::VecArray<int, maxNFollowers> *d_followers,
+void kernel_assign_clusters(const cms::sycltools::VecArray<int, maxNSeeds> *d_seeds,
+                            const cms::sycltools::VecArray<int, maxNFollowers> *d_followers,
                             view *d_points,
-                            sycl::nd_item<3> item) {
+                            sycl::nd_item<1> item) {
   int idxCls = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   const auto &seeds = d_seeds[0];
   const auto nSeeds = seeds.size();

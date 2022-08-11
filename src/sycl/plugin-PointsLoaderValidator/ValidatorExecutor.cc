@@ -68,20 +68,6 @@ void ValidatorPointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup cons
   assert(arraysAreEqual(pcDevice.weight.get(), pcTrueData->weight, pcDevice.n, ctx.stream()));
   std::cout << "weight -> Ok" << '\n';
 
-  std::vector<float> fZeros(pcDevice.n, 0);
-  std::vector<int> iZeros(pcDevice.n, 0);
-
-  assert(arraysAreEqual(pcDevice.rho.get(), fZeros, pcDevice.n, ctx.stream()));
-  std::cout << "rho correctly initialised to 0" << '\n';
-  assert(arraysAreEqual(pcDevice.delta.get(), fZeros, pcDevice.n, ctx.stream()));
-  std::cout << "delta correctly initialised to 0" << '\n';
-  assert(arraysAreEqual(pcDevice.nearestHigher.get(), iZeros, pcDevice.n, ctx.stream()));
-  std::cout << "nearestHigher correctly initialised to 0" << '\n';
-  assert(arraysAreEqual(pcDevice.clusterIndex.get(), iZeros, pcDevice.n, ctx.stream()));
-  std::cout << "clusterIndex correctly initialised to 0" << '\n';
-  assert(arraysAreEqual(pcDevice.isSeed.get(), iZeros, pcDevice.n, ctx.stream()));
-  std::cout << "isSeed correctly initialised to 0" << '\n';
-  
   std::cout << "Data copied correctly" << std::endl;
 }
 DEFINE_FWK_MODULE(ValidatorPointsCloudToSYCL);
