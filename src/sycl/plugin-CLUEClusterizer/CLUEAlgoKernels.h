@@ -7,7 +7,7 @@
 
 using view = PointsCloudSYCL::PointsCloudSYCLView;
 
-void kernel_compute_histogram(LayerTilesSYCL *d_hist, view *d_points, int const &numberOfPoints, sycl::nd_item<3> item) {
+void kernel_compute_histogram(LayerTilesSYCL *d_hist, view *d_points, int const &numberOfPoints, sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints) {
     // push index of points into tiles
@@ -16,7 +16,7 @@ void kernel_compute_histogram(LayerTilesSYCL *d_hist, view *d_points, int const 
 }
 
 void kernel_calculate_density(
-    LayerTilesSYCL *d_hist, view *d_points, float dc, int const &numberOfPoints, sycl::nd_item<3> item) {
+    LayerTilesSYCL *d_hist, view *d_points, float dc, int const &numberOfPoints, sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints) {
     double rhoi{0.};
@@ -53,7 +53,7 @@ void kernel_calculate_distanceToHigher(LayerTilesSYCL *d_hist,
                                        float outlierDeltaFactor,
                                        float dc,
                                        int const &numberOfPoints,
-                                       sycl::nd_item<3> item) {
+                                       sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   float dm = outlierDeltaFactor * dc;
   if (i < numberOfPoints) {
@@ -106,7 +106,7 @@ void kernel_find_clusters(cms::sycltools::VecArray<int, maxNSeeds> *d_seeds,
                           float dc,
                           float rhoc,
                           int const &numberOfPoints,
-                          sycl::nd_item<3> item) {
+                          sycl::nd_item<1> item) {
   int i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints) {
     // initialize clusterIndex
@@ -134,7 +134,7 @@ void kernel_find_clusters(cms::sycltools::VecArray<int, maxNSeeds> *d_seeds,
 void kernel_assign_clusters(const cms::sycltools::VecArray<int, maxNSeeds> *d_seeds,
                             const cms::sycltools::VecArray<int, maxNFollowers> *d_followers,
                             view *d_points,
-                            sycl::nd_item<3> item) {
+                            sycl::nd_item<1> item) {
   int idxCls = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   const auto &seeds = d_seeds[0];
   const auto nSeeds = seeds.size();
