@@ -4,3 +4,4 @@ PointsLoader_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats
 PointsLoaderValidator_DEPENDS := Framework SYCLCore SYCLDataFormats DataFormats
 CLUEClusterizer_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats
 CLUEOutputProducer_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats
+CLUEValidator_DEPENDS := Framework DataFormats SYCLCore SYCLDataFormats

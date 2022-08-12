@@ -121,6 +121,8 @@ int main(int argc, char** argv) try {
     if (validation) {
       esmodules.emplace_back("ValidatorPointsCloudESProducer");
       edmodules.emplace_back("ValidatorPointsCloudToSYCL");
+      esmodules.emplace_back("CLUEValidatorESProducer");
+      edmodules.emplace_back("CLUEValidator");
     }
   }
   edm::EventProcessor processor(
