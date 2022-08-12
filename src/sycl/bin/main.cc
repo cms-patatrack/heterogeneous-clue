@@ -115,14 +115,12 @@ int main(int argc, char** argv) try {
     edmodules = {"PointsCloudProducer", "CLUESYCLClusterizer"};
     esmodules = {"PointsCloudESProducer"};
     if (transfer) {
-      // add modules for transfer
+      esmodules.emplace_back("CLUEOutputESProducer");
+      edmodules.emplace_back("CLUEOutputProducer");
     }
-
     if (validation) {
       esmodules.emplace_back("ValidatorPointsCloudESProducer");
-      esmodules.emplace_back("CLUEValidatorESProducer");
       edmodules.emplace_back("ValidatorPointsCloudToSYCL");
-      edmodules.emplace_back("CLUEValidator");
     }
   }
   edm::EventProcessor processor(
