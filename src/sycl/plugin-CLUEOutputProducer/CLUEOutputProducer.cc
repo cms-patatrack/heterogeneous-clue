@@ -1,0 +1,67 @@
+#include <iostream>
+#include <memory>
+#include <filesystem>
+#include <fstream>
+
+#include "DataFormats/FEDRawDataCollection.h"
+#include "Framework/EDProducer.h"
+#include "Framework/Event.h"
+#include "Framework/EventSetup.h"
+#include "Framework/PluginFactory.h"
+
+#include "DataFormats/PointsCloud.h"
+
+#include "SYCLCore/Product.h"
+#include "SYCLCore/ScopedContext.h"
+
+#include "SYCLDataFormats/PointsCloudSYCL.h"
+
+class CLUEOutputProducer : public edm::EDProducer {
+public:
+  explicit CLUEOutputProducer(edm::ProductRegistry& reg);
+
+private:
+  void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
+  edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> token_device_clusters;
+};
+
+CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
+    : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
+
+void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
+  auto outDir = eventSetup.get<std::filesystem::path>();
+
+  auto const& pcProduct = event.get(token_device_clusters);
+  cms::sycltools::ScopedContextProduce ctx{pcProduct};
+  auto const& device_clusters = ctx.get(pcProduct);
+
+  auto stream = ctx.stream();
+
+  std::cout << "Clustered " << device_clusters.n << " points" << std::endl;
+
+  PointsCloud results(device_clusters.n);
+  stream.memcpy(results.x.data(), device_clusters.x.get(), device_clusters.n * sizeof(float));
+  stream.memcpy(results.y.data(), device_clusters.y.get(), device_clusters.n * sizeof(float));
+  stream.memcpy(results.layer.data(), device_clusters.layer.get(), device_clusters.n * sizeof(int));
+  stream.memcpy(results.weight.data(), device_clusters.weight.get(), device_clusters.n * sizeof(float));
+  stream.memcpy(results.rho.data(), device_clusters.rho.get(), device_clusters.n * sizeof(float));
+  stream.memcpy(results.delta.data(), device_clusters.delta.get(), device_clusters.n * sizeof(float));
+  stream.memcpy(results.nearestHigher.data(), device_clusters.nearestHigher.get(), device_clusters.n * sizeof(int));
+  stream.memcpy(results.isSeed.data(), device_clusters.isSeed.get(), device_clusters.n * sizeof(int));
+  stream.memcpy(results.clusterIndex.data(), device_clusters.clusterIndex.get(), device_clusters.n * sizeof(int)).wait();
+
+  std::cout << "Saving data to: " << outDir / "clue_output.csv" << std::endl;
+  std::ofstream clueOut(outDir / "clue_output.csv");
+
+  clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
+  for (int i = 0; i < device_clusters.n; i++) {
+    clueOut << i << "," << results.x[i] << "," << results.y[i] << "," << results.layer[i] << "," << results.weight[i]
+            << "," << results.rho[i] << "," << (results.delta[i] > 999 ? 999 : results.delta[i]) << ","
+            << results.nearestHigher[i] << "," << results.isSeed[i] << "," << results.clusterIndex[i] << "\n";
+  }
+
+  clueOut.close();
+
+  std::cout << "Ouput was saved in " << outDir << std::endl;
+}
+DEFINE_FWK_MODULE(CLUEOutputProducer);

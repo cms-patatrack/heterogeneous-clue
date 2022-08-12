@@ -4,6 +4,20 @@
 #include <vector>
 
 struct PointsCloud {
+  PointsCloud() = default;
+  PointsCloud(int const& n) {
+    x.resize(n);
+    y.resize(n);
+    layer.resize(n);
+    weight.resize(n);
+
+    rho.resize(n);
+    delta.resize(n);
+    nearestHigher.resize(n);
+    clusterIndex.resize(n);
+    followers.resize(n);
+    isSeed.resize(n);
+  }
   std::vector<float> x;
   std::vector<float> y;
   std::vector<int> layer;
