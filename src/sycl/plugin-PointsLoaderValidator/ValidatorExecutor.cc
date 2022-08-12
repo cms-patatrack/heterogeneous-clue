@@ -8,9 +8,7 @@
 
 #include "SYCLCore/Product.h"
 #include "SYCLCore/ScopedContext.h"
-// #include "SYCLCore/device_unique_ptr.h"
 
-// #include "DataFormats/PointsCloud.h"
 #include "SYCLDataFormats/PointsCloudSYCL.h"
 #include "ValidatorData.h"
 
@@ -68,6 +66,6 @@ void ValidatorPointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup cons
   assert(arraysAreEqual(pcDevice.weight.get(), pcTrueData->weight, pcDevice.n, ctx.stream()));
   std::cout << "weight -> Ok" << '\n';
 
-  std::cout << "Data copied correctly" << std::endl;
+  std::cout << "Input data copied correctly from host to device" << std::endl;
 }
 DEFINE_FWK_MODULE(ValidatorPointsCloudToSYCL);
