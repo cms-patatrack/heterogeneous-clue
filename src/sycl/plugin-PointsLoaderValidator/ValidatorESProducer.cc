@@ -8,7 +8,7 @@
 
 class ValidatorPointsCloudESProducer : public edm::ESProducer {
 public:
-  ValidatorPointsCloudESProducer(std::filesystem::path const& datadir) : data_{datadir} {}
+  ValidatorPointsCloudESProducer(std::filesystem::path const& inputFile) : data_{inputFile} {}
   void produce(edm::EventSetup& eventSetup);
 
 private:
@@ -20,7 +20,7 @@ void ValidatorPointsCloudESProducer::produce(edm::EventSetup& eventSetup) {
   ValidatorPointsCloud cloud;
   for (int l = 0; l < NLAYERS; l++) {
     // open csv file
-    std::ifstream iFile(data_ / "input/toyDetector_10k.csv");
+    std::ifstream iFile(data_);
     std::string value = "";
     // Iterate through each line and split the content using delimeter
     while (getline(iFile, value, ',')) {

@@ -53,7 +53,7 @@ void ValidatorPointsCloudToSYCL::produce(edm::Event& event, edm::EventSetup cons
   cms::sycltools::ScopedContextProduce ctx{pcDeviceProduct};
   auto const& pcDevice = ctx.get(pcDeviceProduct);
 
-  std::cout << "Checking data on device" << '\n';
+  std::cout << "Checking input data on device" << '\n';
 
   assert(pcDevice.n == pcTrueData->n);
   std::cout << "Number of points -> Ok" << '\n';

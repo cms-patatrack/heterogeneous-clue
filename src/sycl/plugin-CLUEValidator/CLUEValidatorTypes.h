@@ -2,6 +2,6 @@
 #define _CLUE_VALIDATOR_TYPES_H
 #include <filesystem>
 struct OutputDirPath {
-    std::filesystem::path path_;
+  std::filesystem::path outFile;
 };
 #endif

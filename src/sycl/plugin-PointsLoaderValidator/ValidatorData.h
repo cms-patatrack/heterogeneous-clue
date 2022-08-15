@@ -21,21 +21,5 @@ struct ValidatorPointsCloud {
   // Does not necessarily store its elements as a contiguous array (so &v[0] + n != &v[n])
 
   int n;
-
-  void clear() {
-    x.clear();
-    y.clear();
-    layer.clear();
-    weight.clear();
-
-    rho.clear();
-    delta.clear();
-    nearestHigher.clear();
-    clusterIndex.clear();
-    followers.clear();
-    isSeed.clear();
-
-    n = 0;
-  }
 };
 #endif

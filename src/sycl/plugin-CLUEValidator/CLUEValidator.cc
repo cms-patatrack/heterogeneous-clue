@@ -2,6 +2,8 @@
 #include <fstream>
 #include <type_traits>
 #include <unordered_map>
+#include <string>
+
 #include "DataFormats/FEDRawDataCollection.h"
 #include "Framework/EDProducer.h"
 #include "Framework/Event.h"
@@ -32,6 +34,7 @@ private:
   bool arraysClustersEqual(const PointsCloud& devicePC, const PointsCloud& truePC);
   void transferToHost(const PointsCloudSYCL& pcDevice, PointsCloud& pc, sycl::queue stream);
   void saveDeviceToOutputFile(const PointsCloud& pc, std::string filePath);
+  std::string checkValidation(std::string const& inputFile);
   void validateOutput(const PointsCloud& pc, std::string trueOutFilePath);
   edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> tokenPC_;
 };
@@ -88,6 +91,32 @@ bool CLUEValidator::arraysClustersEqual(const PointsCloud& devicePC, const Point
   return sameValue;
 }
 
+std::string CLUEValidator::checkValidation(std::string const& inputFile) {
+  if (inputFile.find("toyDetector_1k") != std::string::npos) {
+    return "ref_1k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_2k") != std::string::npos) {
+    return "ref_2k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_3k") != std::string::npos) {
+    return "ref_3k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_4k") != std::string::npos) {
+    return "ref_4k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_5k") != std::string::npos) {
+    return "ref_5k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_6k") != std::string::npos) {
+    return "ref_6k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_7k") != std::string::npos) {
+    return "ref_7k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_8k") != std::string::npos) {
+    return "ref_8k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_9k") != std::string::npos) {
+    return "ref_9k_20_25_2.csv";
+  } else if (inputFile.find("toyDetector_10k") != std::string::npos) {
+    return "ref_10k_20_25_2.csv";
+  } else {
+    return std::string();
+  }
+}
+
 void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
   auto outDataDir = std::make_unique<OutputDirPath>();
   *outDataDir = eventSetup.get<OutputDirPath>();
@@ -100,15 +129,22 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
 
   PointsCloud pc(pcDevice.n);
   transferToHost(pcDevice, pc, stream);
-  std::cout << "Num of points: " << pcDevice.n << std::endl;
+  std::cout << "Number of points: " << pcDevice.n << std::endl;
 
-  std::cout << "Saving into " << outDataDir->path_ / "clue_output.csv" << std::endl;
-  saveDeviceToOutputFile(pc, outDataDir->path_ / "clue_output.csv");
+  std::cout << "Saving into " << outDataDir->outFile << std::endl;
+  saveDeviceToOutputFile(pc, outDataDir->outFile);
   std::cout << "Results were saved!" << std::endl;
 
-  std::cout << "Validating output results from " << outDataDir->path_ / "reference" / "ref_10k_20_25_2.csv" << std::endl;
-  validateOutput(pc, outDataDir->path_ / "reference" /"ref_10k_20_25_2.csv");
-  std::cout << "CLUE output is correct!" << '\n';
+  if (checkValidation(outDataDir->outFile) != std::string()) {
+    auto ref_file = checkValidation(outDataDir->outFile);
+    std::filesystem::path ref_path = outDataDir->outFile.parent_path() / "reference";
+    std::cout << "Validating output results from " << ref_path / ref_file << std::endl;
+    validateOutput(pc, ref_path / ref_file);
+    std::cout << "CLUE output is correct!" << '\n';
+  } else {
+    std::cout << "\nThere is no reference output data for the input file selected.\n";
+    std::cout << "Please select one of the toyDetectors input files to validate the plugin results\n" << std::endl;
+  }
 }
 
 void CLUEValidator::transferToHost(const PointsCloudSYCL& pcDevice, PointsCloud& pc, sycl::queue stream) {
