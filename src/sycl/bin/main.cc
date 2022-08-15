@@ -24,7 +24,7 @@ namespace {
         << ": [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
-        << "--device             Specifies the device which should run the code (default not set. Possibilities are: "
+        << " --device             Specifies the device which should run the code (default not set. Possibilities are: "
            "cpu, gpu or acc\n"
         << " --numberOfThreads   Number of threads to use (default 1, use 0 to use all CPU cores)\n"
         << " --numberOfStreams   Number of concurrent events (default 0 = numberOfThreads)\n"

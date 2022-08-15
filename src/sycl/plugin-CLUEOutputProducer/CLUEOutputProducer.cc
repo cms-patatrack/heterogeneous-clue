@@ -29,6 +29,7 @@ CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
     : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
 void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
+  bool verboseResults = false;
   auto outDir = eventSetup.get<std::filesystem::path>();
 
   auto const& pcProduct = event.get(token_device_clusters);
@@ -36,8 +37,6 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
   auto const& device_clusters = ctx.get(pcProduct);
 
   auto stream = ctx.stream();
-
-  std::cout << "Clustered " << device_clusters.n << " points" << std::endl;
 
   PointsCloud results(device_clusters.n);
   stream.memcpy(results.x.data(), device_clusters.x.get(), device_clusters.n * sizeof(float));
@@ -50,18 +49,21 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
   stream.memcpy(results.isSeed.data(), device_clusters.isSeed.get(), device_clusters.n * sizeof(int));
   stream.memcpy(results.clusterIndex.data(), device_clusters.clusterIndex.get(), device_clusters.n * sizeof(int)).wait();
 
-  std::cout << "Saving data to: " << outDir / "clue_output.csv" << std::endl;
-  std::ofstream clueOut(outDir / "clue_output.csv");
+  std::cout << "Data transfered back to host" << std::endl;
 
-  clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
-  for (int i = 0; i < device_clusters.n; i++) {
-    clueOut << i << "," << results.x[i] << "," << results.y[i] << "," << results.layer[i] << "," << results.weight[i]
-            << "," << results.rho[i] << "," << (results.delta[i] > 999 ? 999 : results.delta[i]) << ","
-            << results.nearestHigher[i] << "," << results.isSeed[i] << "," << results.clusterIndex[i] << "\n";
+  if (verboseResults) {
+    std::ofstream clueOut(outDir / "clue_output.csv");
+
+    clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
+    for (int i = 0; i < device_clusters.n; i++) {
+      clueOut << i << "," << results.x[i] << "," << results.y[i] << "," << results.layer[i] << "," << results.weight[i]
+              << "," << results.rho[i] << "," << (results.delta[i] > 999 ? 999 : results.delta[i]) << ","
+              << results.nearestHigher[i] << "," << results.isSeed[i] << "," << results.clusterIndex[i] << "\n";
+    }
+
+    clueOut.close();
+
+    std::cout << "Ouput was saved in " << outDir << std::endl;
   }
-
-  clueOut.close();
-
-  std::cout << "Ouput was saved in " << outDir << std::endl;
 }
 DEFINE_FWK_MODULE(CLUEOutputProducer);

@@ -16,7 +16,8 @@
 std::vector<float> CLAMPED(std::vector<float> in, float upperLimit) {
   std::vector<float> out(in);
   for (size_t i = 0; i < out.size(); i++)
-    if (out[i] > upperLimit) out[i] = upperLimit;
+    if (out[i] > upperLimit)
+      out[i] = upperLimit;
   return out;
 }
 
@@ -36,7 +37,7 @@ private:
 };
 
 CLUEValidator::CLUEValidator(edm::ProductRegistry& reg)
-  : tokenPC_(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
+    : tokenPC_(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
 template <class T>
 bool CLUEValidator::arraysAreEqual(std::vector<T> devicePtr, std::vector<T> trueDataArr) {
@@ -44,8 +45,7 @@ bool CLUEValidator::arraysAreEqual(std::vector<T> devicePtr, std::vector<T> true
   for (size_t i = 0; i < devicePtr.size(); i++) {
     if (std::is_same<T, int>::value) {
       sameValue = devicePtr[i] == trueDataArr[i];
-    }
-    else {
+    } else {
       const float TOLERANCE = 0.001;
       sameValue = std::abs(devicePtr[i] - trueDataArr[i]) <= TOLERANCE;
     }
@@ -59,7 +59,6 @@ bool CLUEValidator::arraysAreEqual(std::vector<T> devicePtr, std::vector<T> true
 }
 
 bool CLUEValidator::arraysClustersEqual(const PointsCloud& devicePC, const PointsCloud& truePC) {
-
   std::unordered_map<int, int> clusterIdMap;
 
   int n = (int)devicePC.x.size();
@@ -80,7 +79,8 @@ bool CLUEValidator::arraysClustersEqual(const PointsCloud& devicePC, const Point
     sameValue = (mappedClusterId == truePC.clusterIndex[i]);
 
     if (!sameValue) {
-      std::cout << "failed comparison for i=" << i << ", original=" << originalClusterId << ", mapped= " << mappedClusterId << " /= " << truePC.clusterIndex[i] << std::endl;
+      std::cout << "failed comparison for i=" << i << ", original=" << originalClusterId
+                << ", mapped= " << mappedClusterId << " /= " << truePC.clusterIndex[i] << std::endl;
       break;
     }
   }
@@ -114,28 +114,24 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
 
 void CLUEValidator::transferToHost(const PointsCloudSYCL& pcDevice, PointsCloud& pc, sycl::queue stream) {
   pc.n = pcDevice.n;
-  stream.memcpy(pc.x.data(), pcDevice.x.get(), pcDevice.n*sizeof(float));
-  stream.memcpy(pc.y.data(), pcDevice.y.get(), pcDevice.n*sizeof(float));
-  stream.memcpy(pc.layer.data(), pcDevice.layer.get(), pcDevice.n*sizeof(int));
-  stream.memcpy(pc.weight.data(), pcDevice.weight.get(), pcDevice.n*sizeof(float));
-  stream.memcpy(pc.rho.data(), pcDevice.rho.get(), pcDevice.n*sizeof(float));
-  stream.memcpy(pc.delta.data(), pcDevice.delta.get(), pcDevice.n*sizeof(float));
-  stream.memcpy(pc.nearestHigher.data(), pcDevice.nearestHigher.get(), pcDevice.n*sizeof(int));
-  stream.memcpy(pc.isSeed.data(), pcDevice.isSeed.get(), pcDevice.n*sizeof(int));
-  stream.memcpy(pc.clusterIndex.data(), pcDevice.clusterIndex.get(), pcDevice.n*sizeof(int))
-    .wait();
+  stream.memcpy(pc.x.data(), pcDevice.x.get(), pcDevice.n * sizeof(float));
+  stream.memcpy(pc.y.data(), pcDevice.y.get(), pcDevice.n * sizeof(float));
+  stream.memcpy(pc.layer.data(), pcDevice.layer.get(), pcDevice.n * sizeof(int));
+  stream.memcpy(pc.weight.data(), pcDevice.weight.get(), pcDevice.n * sizeof(float));
+  stream.memcpy(pc.rho.data(), pcDevice.rho.get(), pcDevice.n * sizeof(float));
+  stream.memcpy(pc.delta.data(), pcDevice.delta.get(), pcDevice.n * sizeof(float));
+  stream.memcpy(pc.nearestHigher.data(), pcDevice.nearestHigher.get(), pcDevice.n * sizeof(int));
+  stream.memcpy(pc.isSeed.data(), pcDevice.isSeed.get(), pcDevice.n * sizeof(int));
+  stream.memcpy(pc.clusterIndex.data(), pcDevice.clusterIndex.get(), pcDevice.n * sizeof(int)).wait();
 }
 
 void CLUEValidator::saveDeviceToOutputFile(const PointsCloud& pc, std::string filePath) {
   std::ofstream clueOut(filePath);
   clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
   for (int i = 0; i < pc.n; i++) {
-    clueOut << i << ","
-              << pc.x[i] << "," << pc.y[i] << ","
-              << pc.layer[i] << "," << pc.weight[i] << ","
-              << pc.rho[i] << "," << (pc.delta[i] > 999 ? 999 : pc.delta[i]) << ","
-              << pc.nearestHigher[i] << "," << pc.isSeed[i] << ","
-              << pc.clusterIndex[i] << "\n";
+    clueOut << i << "," << pc.x[i] << "," << pc.y[i] << "," << pc.layer[i] << "," << pc.weight[i] << "," << pc.rho[i]
+            << "," << (pc.delta[i] > 999 ? 999 : pc.delta[i]) << "," << pc.nearestHigher[i] << "," << pc.isSeed[i]
+            << "," << pc.clusterIndex[i] << "\n";
   }
 
   clueOut.close();
@@ -147,11 +143,8 @@ void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFil
   std::string value = "";
   // Get Header Line
   getline(iTrueDataFile, value);
-  std::cout << "Read header: " << value << std::endl;
-  // Iterate through each line and split the content using delimeter
   int n = 1;
   while (getline(iTrueDataFile, value, ',')) {
-    // int id = std::stoi(value);
     try {
       getline(iTrueDataFile, value, ',');
       truePC.x.push_back(std::stof(value));
@@ -171,7 +164,7 @@ void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFil
       truePC.isSeed.push_back(std::stoi(value));
       getline(iTrueDataFile, value);
       truePC.clusterIndex.push_back(std::stoi(value));
-    } catch(std::exception& e) {
+    } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
       std::cout << "Bad Input: '" << value << "' in line " << n << std::endl;
       break;
@@ -180,12 +173,6 @@ void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFil
   }
   std::cout << "Read true points!\n";
   iTrueDataFile.close();
-
-  std::cout << "0: " << truePC.x[0] << "," << truePC.y[0] << ","
-                    << truePC.layer[0] << "," << truePC.weight[0] << ","
-                    << truePC.rho[0] << "," << truePC.delta[0] << ","
-                    << truePC.nearestHigher[0] << "," << truePC.isSeed[0] << ","
-                    << truePC.clusterIndex[0] << std::endl;
 
   assert(arraysAreEqual(pc.rho, truePC.rho));
   assert(arraysAreEqual(CLAMPED(pc.delta, 999), truePC.delta));
