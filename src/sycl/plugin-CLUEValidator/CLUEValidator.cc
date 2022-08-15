@@ -106,9 +106,8 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
   saveDeviceToOutputFile(pc, outDataDir->path_ / "clue_output.csv");
   std::cout << "Results were saved!" << std::endl;
 
-  std::cout << "Validating CLUE output..." << '\n';
-  std::cout << "Validating from " << outDataDir->path_ / "toyDetector_10000.csv" << std::endl;
-  validateOutput(pc, outDataDir->path_ / "toyDetector_10000.csv");
+  std::cout << "Validating output results from " << outDataDir->path_ / "reference" / "ref_10k_20_25_2.csv" << std::endl;
+  validateOutput(pc, outDataDir->path_ / "reference" /"ref_10k_20_25_2.csv");
   std::cout << "CLUE output is correct!" << '\n';
 }
 

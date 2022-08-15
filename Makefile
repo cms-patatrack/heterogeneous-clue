@@ -100,7 +100,8 @@ endif
 DATA_BASE := $(BASE_DIR)/data
 export DATA_DEPS := $(DATA_BASE)/data_ok
 DATA_TAR_GZ := $(DATA_BASE)/data.tar.gz
-DATA_CLUE_TAR_GZ := $(DATA_BASE)/data_clue.tar.gz
+DATA_INPUT_TAR_GZ := $(DATA_BASE)/data_input.tar.gz
+DATA_REF_TAR_GZ := $(DATA_BASE)/data_reference.tar.gz
 
 # External definitions
 EXTERNAL_BASE := $(BASE_DIR)/external
@@ -487,7 +488,10 @@ distclean: | clean
 	rm -fR $(EXTERNAL_BASE) .original_env
 
 dataclean:
-	rm -fR $(DATA_BASE)/*.tar.gz $(DATA_BASE)/*.bin $(DATA_BASE)/data_ok $(DATA_BASE)/input/*.csv
+	rm -fR $(DATA_BASE)/*.tar.gz 
+	rm -fR$(DATA_BASE)/*.bin 
+	rm -fR$(DATA_BASE)/data_ok 
+	rm -fR $(DATA_BASE)/input/*.csv $(DATA_BASE)/output/reference/*.csv
 
 define CLEAN_template
 clean_$(1):
@@ -496,19 +500,23 @@ endef
 $(foreach target,$(TARGETS_ALL),$(eval $(call CLEAN_template,$(target))))
 
 # Data rules
-$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/input/md5_clue.txt
+$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_INPUT_TAR_GZ) $(DATA_REF_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/input/md5_input.txt $(DATA_BASE)/output/reference/md5_reference.txt
 	cd $(DATA_BASE) && tar zxf $(DATA_TAR_GZ)
 	cd $(DATA_BASE) && md5sum *.bin | diff -u md5.txt -
-	cd $(DATA_BASE)/input && tar zxf $(DATA_CLUE_TAR_GZ)
-	cd $(DATA_BASE)/input && md5sum *.csv | diff -u md5_clue.txt -
-	mkdir $(DATA_BASE)/output
+	cd $(DATA_BASE)/input && tar zxf $(DATA_INPUT_TAR_GZ)
+	cd $(DATA_BASE)/input && md5sum *.csv | diff -u md5_input.txt -
+	cd $(DATA_BASE)/output/reference && tar zxf $(DATA_REF_TAR_GZ)
+	cd $(DATA_BASE)/output/reference && md5sum *.csv | diff -u md5_reference.txt -
 	touch $(DATA_DEPS)
 
 $(DATA_TAR_GZ): | $(DATA_BASE)/url.txt
 	curl -L -s -S $(shell cat $(DATA_BASE)/url.txt) -o $@
 
-$(DATA_CLUE_TAR_GZ): | $(DATA_BASE)/input/url_clue.txt
-	curl -L -s -S $(shell cat $(DATA_BASE)/input/url_clue.txt) -o $@
+$(DATA_INPUT_TAR_GZ): | $(DATA_BASE)/input/url_input.txt
+	curl -L -s -S $(shell cat $(DATA_BASE)/input/url_input.txt) -o $@
+
+$(DATA_REF_TAR_GZ): | $(DATA_BASE)/output/reference/url_reference.txt
+	curl -L -s -S $(shell cat $(DATA_BASE)/output/reference/url_reference.txt) -o $@
 
 # External rules
 $(EXTERNAL_BASE):
