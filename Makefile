@@ -493,6 +493,9 @@ dataclean:
 	rm -fR $(DATA_BASE)/data_ok 
 	rm -fR $(DATA_BASE)/input/*.csv $(DATA_BASE)/output/reference/*.csv
 
+outputclean: 
+	rm -fR $(DATA_BASE)/output/*.csv
+
 define CLEAN_template
 clean_$(1):
 	rm -fR $(LIB_DIR)/$(1) $(OBJ_DIR)/$(1) $(TEST_DIR)/$(1) $(1)
