@@ -501,6 +501,7 @@ $(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_B
 	cd $(DATA_BASE) && md5sum *.bin | diff -u md5.txt -
 	cd $(DATA_BASE)/input && tar zxf $(DATA_CLUE_TAR_GZ)
 	cd $(DATA_BASE)/input && md5sum *.csv | diff -u md5_clue.txt -
+	mkdir $(DATA_BASE)/output
 	touch $(DATA_DEPS)
 
 $(DATA_TAR_GZ): | $(DATA_BASE)/url.txt
