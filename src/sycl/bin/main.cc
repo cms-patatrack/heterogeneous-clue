@@ -32,6 +32,8 @@ namespace {
         << " --runForMinutes     Continue processing the set of 1000 events until this many minutes have passed "
            "(default -1 for disabled; conflicts with --maxEvents)\n"
         << " --data              Path to the 'data' directory (default 'data' in the directory of the executable)\n"
+        << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
+           "data/input/toyDetector_1k.csv)'\n"
         << " --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)\n"
         << " --validation        Run (rudimentary) validation at the end (implies --transfer)\n"
         << " --empty             Ignore all producers (for testing only)\n"
@@ -48,6 +50,7 @@ int main(int argc, char** argv) try {
   int maxEvents = -1;
   int runForMinutes = -1;
   std::filesystem::path datadir;
+  std::filesystem::path inputFile;
   bool transfer = false;
   bool validation = false;
   bool empty = false;
@@ -74,6 +77,9 @@ int main(int argc, char** argv) try {
     } else if (*i == "--data") {
       ++i;
       datadir = *i;
+    } else if (*i == "--inputFile") {
+      ++i;
+      inputFile = *i;
     } else if (*i == "--transfer") {
       transfer = true;
     } else if (*i == "--validation") {
@@ -104,6 +110,12 @@ int main(int argc, char** argv) try {
     std::cout << "Data directory '" << datadir << "' does not exist" << std::endl;
     return EXIT_FAILURE;
   }
+  if (inputFile.empty()) {
+    inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/toyDetector_1k.csv";
+  }
+  if (not std::filesystem::exists(inputFile)) {
+    std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;
+  }
 
   // Initialise the SYCL runtime
   cms::sycltools::enumerateDevices(true);
@@ -125,8 +137,14 @@ int main(int argc, char** argv) try {
       edmodules.emplace_back("CLUEValidator");
     }
   }
-  edm::EventProcessor processor(
-      maxEvents, runForMinutes, numberOfStreams, std::move(edmodules), std::move(esmodules), datadir, validation);
+  edm::EventProcessor processor(maxEvents,
+                                runForMinutes,
+                                numberOfStreams,
+                                std::move(edmodules),
+                                std::move(esmodules),
+                                datadir,
+                                inputFile,
+                                validation);
   if (runForMinutes < 0) {
     std::cout << "Processing " << processor.maxEvents() << " events, of which " << numberOfStreams
               << " concurrently, with " << numberOfThreads << " threads." << std::endl;

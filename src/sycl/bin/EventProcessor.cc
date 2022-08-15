@@ -25,6 +25,32 @@ namespace edm {
     }
   }
 
+  EventProcessor::EventProcessor(int maxEvents,
+                                 int runForMinutes,
+                                 int numberOfStreams,
+                                 std::vector<std::string> const& path,
+                                 std::vector<std::string> const& esproducers,
+                                 std::filesystem::path const& datadir,
+                                 std::filesystem::path const& inputFile,
+                                 bool validation)
+      : source_(maxEvents, runForMinutes, registry_, datadir, validation) {
+    for (auto const& name : esproducers) {
+      pluginManager_.load(name);
+      if (name == "PointsCloudESProducer" or name == "CLUEOutputESProducer" or name == "CLUEValidatorESProducer" or
+          name == "ValidatorPointsCloudESProducer") {
+        auto esp = ESPluginFactory::create(name, inputFile);
+        esp->produce(eventSetup_);
+      } else {
+        auto esp = ESPluginFactory::create(name, datadir);
+      }
+    }
+
+    //schedules_.reserve(numberOfStreams);
+    for (int i = 0; i < numberOfStreams; ++i) {
+      schedules_.emplace_back(registry_, pluginManager_, &source_, &eventSetup_, i, path);
+    }
+  }
+
   void EventProcessor::runToCompletion() {
     source_.startProcessing();
     // The task that waits for all other work
