@@ -489,8 +489,8 @@ distclean: | clean
 
 dataclean:
 	rm -fR $(DATA_BASE)/*.tar.gz 
-	rm -fR$(DATA_BASE)/*.bin 
-	rm -fR$(DATA_BASE)/data_ok 
+	rm -fR $(DATA_BASE)/*.bin 
+	rm -fR $(DATA_BASE)/data_ok 
 	rm -fR $(DATA_BASE)/input/*.csv $(DATA_BASE)/output/reference/*.csv
 
 define CLEAN_template
