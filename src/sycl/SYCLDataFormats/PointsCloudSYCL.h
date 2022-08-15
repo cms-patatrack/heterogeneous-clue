@@ -7,24 +7,22 @@
 
 using Deleter = cms::sycltools::device::impl::DeviceDeleter;
 
+constexpr unsigned int reserve = 1000000;
+
 class PointsCloudSYCL {
 public:
   PointsCloudSYCL() = default;
-  PointsCloudSYCL(sycl::queue stream, int numberOfPoints) {
-    unsigned int reserve = 1000000;
-    //input variables
-    x = cms::sycltools::make_device_unique<float[]>(reserve, stream);
-    y = cms::sycltools::make_device_unique<float[]>(reserve, stream);
-    layer = cms::sycltools::make_device_unique<int[]>(reserve, stream);
-    weight = cms::sycltools::make_device_unique<float[]>(reserve, stream);
-    //result variables
-    rho = cms::sycltools::make_device_unique<float[]>(reserve, stream);
-    delta = cms::sycltools::make_device_unique<float[]>(reserve, stream);
-    nearestHigher = cms::sycltools::make_device_unique<int[]>(reserve, stream);
-    clusterIndex = cms::sycltools::make_device_unique<int[]>(reserve, stream);
-    isSeed = cms::sycltools::make_device_unique<int[]>(reserve, stream);
-    n = numberOfPoints;
-
+  PointsCloudSYCL(sycl::queue stream, int numberOfPoints)
+      : x{cms::sycltools::make_device_unique<float[]>(reserve, stream)},
+        y{cms::sycltools::make_device_unique<float[]>(reserve, stream)},
+        layer{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
+        weight{cms::sycltools::make_device_unique<float[]>(reserve, stream)},
+        rho{cms::sycltools::make_device_unique<float[]>(reserve, stream)},
+        delta{cms::sycltools::make_device_unique<float[]>(reserve, stream)},
+        nearestHigher{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
+        clusterIndex{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
+        isSeed{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
+        n{numberOfPoints} {
     auto view = std::make_unique<PointsCloudSYCLView>();
     view->x = x.get();
     view->y = y.get();

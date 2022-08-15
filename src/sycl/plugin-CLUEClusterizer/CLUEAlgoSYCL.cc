@@ -21,7 +21,6 @@ CLUEAlgoSYCL::~CLUEAlgoSYCL() {
 }
 
 void CLUEAlgoSYCL::init_device() {
-  unsigned int reserve = 1000000;
   d_hist = sycl::malloc_device<LayerTilesSYCL>(NLAYERS, *queue_);
   d_seeds = sycl::malloc_device<cms::sycltools::VecArray<int, maxNSeeds>>(1, *queue_);
   d_followers = sycl::malloc_device<cms::sycltools::VecArray<int, maxNFollowers>>(reserve, *queue_);
