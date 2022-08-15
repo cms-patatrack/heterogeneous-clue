@@ -29,7 +29,7 @@ CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
     : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()) {}
 
 void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
-  bool verboseResults = false;
+  bool verboseResults = true;
   auto outDir = eventSetup.get<std::filesystem::path>();
 
   auto const& pcProduct = event.get(token_device_clusters);
@@ -52,7 +52,7 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
   std::cout << "Data transfered back to host" << std::endl;
 
   if (verboseResults) {
-    std::ofstream clueOut(outDir / "clue_output.csv");
+    std::ofstream clueOut(outDir);
 
     clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
     for (int i = 0; i < device_clusters.n; i++) {

@@ -8,7 +8,7 @@
 
 class PointsCloudESProducer : public edm::ESProducer {
 public:
-  PointsCloudESProducer(std::filesystem::path const& datadir) : data_{datadir/"input/toyDetector_10k.csv"} {}
+  PointsCloudESProducer(std::filesystem::path const& inputFile) : data_{inputFile} {}
   void produce(edm::EventSetup& eventSetup);
 
 private:
