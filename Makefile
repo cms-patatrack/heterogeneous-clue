@@ -261,19 +261,40 @@ ifdef KOKKOS_HOST_PARALLEL
 endif
 export KOKKOS_DEPS := $(KOKKOS_LIB)
 
-# Intel oneAPI
+SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
+SYCL_VERSION  := 2022.1.0
+
+ifdef USE_SYCL_PATATRACK
+ONEAPI_BASE := /data2/user/wredjeb/sycl_workspace
+SYCL_BASE     := $(ONEAPI_BASE)/build
+USER_SYCLFLAGS := -fsycl-targets=nvptx64-nvidia-cuda -std=c++17
+export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
+export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+
+else
 ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
+ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
+SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
+DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/$(SYCL_VERSION)
+DPCT_CXXFLAGS := -Wsycl-strict -isystem $(DPCT_BASE)/include
+USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
+export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+endif
+
+# Intel oneAPI
+# ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
 # /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
 # /opt/intel/oneapi
-ifneq ($(wildcard $(ONEAPI_BASE)),)
-# OneAPI platform found
-SYCL_VERSION  := 2022.1.0
-ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
-DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/$(SYCL_VERSION)
-SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
-DPCT_CXXFLAGS := -Wsycl-strict -isystem $(DPCT_BASE)/include
-endif
-SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
+# ifneq ($(wildcard $(ONEAPI_BASE)),)
+# # OneAPI platform found
+# SYCL_VERSION  := 2022.1.0
+# ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
+# DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/$(SYCL_VERSION)
+# SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
+# DPCT_CXXFLAGS := -Wsycl-strict -isystem $(DPCT_BASE)/include
+# endif
+# SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
 
 # to use a different toolchain
 #   - unset ONEAPI_ENV
@@ -289,10 +310,10 @@ else
 SYCL_BASE :=
 endif
 endif
-USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+# USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
 ifdef SYCL_BASE
-export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
-export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+# export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
+# export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
 ifdef CUDA_BASE
 export SYCL_CUDA_PLUGIN := $(wildcard $(SYCL_LIBDIR)/libpi_cuda.so)
 export SYCL_CUDA_FLAGS  := --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version
