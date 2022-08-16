@@ -21,7 +21,8 @@ namespace {
   void print_help(std::string const& name) {
     std::cout
         << name
-        << ": [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--transfer] [--validation] "
+        << ": [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile "
+           "PATH] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
         << " --device             Specifies the device which should run the code (default not set. Possibilities are: "
