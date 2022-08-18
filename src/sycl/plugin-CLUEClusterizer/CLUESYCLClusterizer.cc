@@ -9,6 +9,7 @@
 #include "SYCLCore/Product.h"
 
 #include "DataFormats/PointsCloud.h"
+#include "DataFormats/CLUE_config.h"
 #include "SYCLDataFormats/PointsCloudSYCL.h"
 #include "CLUEAlgoSYCL.h"
 
@@ -32,11 +33,9 @@ void CLUESYCLClusterizer::produce(edm::Event& event, const edm::EventSetup& even
   auto const& pcProduct = event.get(tokenPointsCloudSYCL_);
   cms::sycltools::ScopedContextProduce ctx(pcProduct);
   PointsCloud const& pc = ctx.get(pcProduct);
+  Parameters const& par = eventSetup.get<Parameters>();
   auto stream = ctx.stream();
-  float dc = 20;
-  float rhoc = 25;
-  float outlierDeltaFactor = 2;
-  CLUEAlgoSYCL clueAlgo(dc, rhoc, outlierDeltaFactor, stream, pc.n);
+  CLUEAlgoSYCL clueAlgo(par.dc, par.rhoc, par.outlierDeltaFactor, stream, pc.n);
   clueAlgo.makeClusters(pc);
 
   ctx.emplace(event, tokenClusters_, std::move(clueAlgo.d_points));

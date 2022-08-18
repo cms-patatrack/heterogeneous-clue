@@ -22,7 +22,7 @@ namespace {
     std::cout
         << name
         << ": [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile "
-           "PATH] [--transfer] [--validation] "
+           "PATH] [--configFile] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
         << " --device             Specifies the device which should run the code (default not set. Possibilities are: "
@@ -35,6 +35,9 @@ namespace {
         << " --data              Path to the 'data' directory (default 'data' in the directory of the executable)\n"
         << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
            "data/input/toyDetector_1k.csv)'\n"
+        << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
+           "produceOutput) to run CLUE (implies --transfer, default 'config/test_without_output.csv' in the directory "
+           "of the exectuable)\n"
         << " --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)\n"
         << " --validation        Run (rudimentary) validation at the end (implies --transfer)\n"
         << " --empty             Ignore all producers (for testing only)\n"
@@ -52,6 +55,7 @@ int main(int argc, char** argv) try {
   int runForMinutes = -1;
   std::filesystem::path datadir;
   std::filesystem::path inputFile;
+  std::filesystem::path configFile;
   bool transfer = false;
   bool validation = false;
   bool empty = false;
@@ -81,6 +85,10 @@ int main(int argc, char** argv) try {
     } else if (*i == "--inputFile") {
       ++i;
       inputFile = *i;
+    } else if (*i == "--configFile") {
+      ++i;
+      transfer = true;
+      configFile = *i;
     } else if (*i == "--transfer") {
       transfer = true;
     } else if (*i == "--validation") {
@@ -117,6 +125,12 @@ int main(int argc, char** argv) try {
   if (not std::filesystem::exists(inputFile)) {
     std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;
   }
+  if (configFile.empty()) {
+    configFile = std::filesystem::path(args[0]).parent_path() / "config" / "test_without_output.csv";
+  }
+  if (not std::filesystem::exists(configFile)) {
+    std::cout << "Config file '" << configFile << "' does not exist" << std::endl;
+  }
 
   // Initialise the SYCL runtime
   cms::sycltools::enumerateDevices(true);
@@ -126,7 +140,7 @@ int main(int argc, char** argv) try {
   std::vector<std::string> esmodules;
   if (not empty) {
     edmodules = {"PointsCloudProducer", "CLUESYCLClusterizer"};
-    esmodules = {"PointsCloudESProducer"};
+    esmodules = {"PointsCloudESProducer", "CLUESYCLClusterizerESProducer"};
     if (transfer) {
       esmodules.emplace_back("CLUEOutputESProducer");
       edmodules.emplace_back("CLUEOutputProducer");
@@ -145,6 +159,7 @@ int main(int argc, char** argv) try {
                                 std::move(esmodules),
                                 datadir,
                                 inputFile,
+                                configFile,
                                 validation);
   if (runForMinutes < 0) {
     std::cout << "Processing " << processor.maxEvents() << " events, of which " << numberOfStreams

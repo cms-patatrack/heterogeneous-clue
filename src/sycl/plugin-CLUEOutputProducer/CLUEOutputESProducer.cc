@@ -7,24 +7,16 @@
 
 class CLUEOutputESProducer : public edm::ESProducer {
 public:
-  CLUEOutputESProducer(std::filesystem::path const& inputFile) : data_{inputFile} {
-    outFileName_ = getOutputFileName(inputFile);
-  }
+  CLUEOutputESProducer(std::filesystem::path const& inputFile) : data_{inputFile} {}
   void produce(edm::EventSetup& eventSetup);
-  std::string getOutputFileName(std::filesystem::path const& inputFile) {
-    std::string fileName = inputFile.filename();
-    fileName.erase(fileName.end() - 4, fileName.end());
-    fileName.append("_output.csv");
-    return fileName;
-  }
 
 private:
-  std::string outFileName_;
   std::filesystem::path data_;
 };
 
 void CLUEOutputESProducer::produce(edm::EventSetup& eventSetup) {
-  auto outDir = std::make_unique<std::filesystem::path>(data_.parent_path().parent_path() / "output" / outFileName_);
+  auto outDir =
+      std::make_unique<std::filesystem::path>(data_.parent_path().parent_path() / "output" / data_.filename());
   eventSetup.put(std::move(outDir));
 }
 

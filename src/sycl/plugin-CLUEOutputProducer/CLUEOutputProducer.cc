@@ -9,6 +9,7 @@
 #include "Framework/EventSetup.h"
 #include "Framework/PluginFactory.h"
 
+#include "DataFormats/CLUE_config.h"
 #include "DataFormats/PointsCloud.h"
 
 #include "SYCLCore/Product.h"
@@ -23,15 +24,14 @@ public:
 private:
   void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
   edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> token_device_clusters;
-  edm::EDPutTokenT<cms::sycltools::Product<PluginWrapper<PointsCloud,CLUEOutputProducer>>> token_output_dir;
+  edm::EDPutTokenT<cms::sycltools::Product<PluginWrapper<PointsCloud, CLUEOutputProducer>>> token_output_dir;
 };
 
 CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
     : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()),
-      token_output_dir(reg.produces<cms::sycltools::Product<PluginWrapper<PointsCloud,CLUEOutputProducer>>>()) {}
+      token_output_dir(reg.produces<cms::sycltools::Product<PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
 
 void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
-  bool verboseResults = true;
   auto outDir = eventSetup.get<std::filesystem::path>();
 
   auto const& pcProduct = event.get(token_device_clusters);
@@ -53,7 +53,14 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
 
   std::cout << "Data transfered back to host" << std::endl;
 
-  if (verboseResults) {
+  Parameters par;
+  par = eventSetup.get<Parameters>();
+  if (par.verbose) {
+    auto temp_outDir = eventSetup.get<std::filesystem::path>();
+    std::string input_file_name = temp_outDir.filename();
+    std::string output_file_name = create_outputfileName(input_file_name, par.dc, par.rhoc, par.outlierDeltaFactor);
+    std::filesystem::path outDir = temp_outDir.parent_path() / output_file_name;
+
     std::ofstream clueOut(outDir);
 
     clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
@@ -67,7 +74,7 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
 
     std::cout << "Ouput was saved in " << outDir << std::endl;
   }
-  
+
   ctx.emplace(event, token_output_dir, std::move(results));
 }
 DEFINE_FWK_MODULE(CLUEOutputProducer);
