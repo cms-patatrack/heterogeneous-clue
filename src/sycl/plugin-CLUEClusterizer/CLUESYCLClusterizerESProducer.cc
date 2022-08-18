@@ -29,12 +29,6 @@ void CLUESYCLClusterizerESProducer::produce(edm::EventSetup& eventSetup) {
   }
   iFile.close();
 
-  std::cout << "Parameters in ESProducer: \n";
-  std::cout << "dc: " << par.dc << '\n';
-  std::cout << "rhoc: " << par.rhoc << '\n';
-  std::cout << "outlier delta factor: " << par.outlierDeltaFactor << '\n';
-  std::cout << "verbose: " << par.verbose << '\n';
-
   auto parameters = std::make_unique<Parameters>(par);
   eventSetup.put(std::move(parameters));
 }
