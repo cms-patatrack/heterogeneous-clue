@@ -5,14 +5,19 @@
 #include <string>
 
 #include "DataFormats/FEDRawDataCollection.h"
+#include "DataFormats/PointsCloud.h"
+
 #include "Framework/EDProducer.h"
 #include "Framework/Event.h"
 #include "Framework/EventSetup.h"
 #include "Framework/PluginFactory.h"
+
 #include "SYCLCore/Product.h"
 #include "SYCLCore/ScopedContext.h"
-#include "DataFormats/PointsCloud.h"
+#include "SYCLCore/PluginWrapper.h"
+
 #include "SYCLDataFormats/PointsCloudSYCL.h"
+
 #include "CLUEValidatorTypes.h"
 
 std::vector<float> CLAMPED(std::vector<float> in, float upperLimit) {
@@ -34,11 +39,13 @@ private:
   bool arraysClustersEqual(const PointsCloud& devicePC, const PointsCloud& truePC);
   std::string checkValidation(std::string const& inputFile);
   void validateOutput(const PointsCloud& pc, std::string trueOutFilePath);
-  edm::EDGetTokenT<cms::sycltools::Product<PluginWrapper<PointsCloud,CLUEOutputProducer>>> resultsTokenPC_;
+  edm::EDGetTokenT<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>
+      resultsTokenPC_;
 };
 
 CLUEValidator::CLUEValidator(edm::ProductRegistry& reg)
-    : resultsTokenPC_(reg.consumes<cms::sycltools::Product<PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
+    : resultsTokenPC_(
+          reg.consumes<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
 
 template <class T>
 bool CLUEValidator::arraysAreEqual(std::vector<T> devicePtr, std::vector<T> trueDataArr) {

@@ -13,6 +13,7 @@
 #include "DataFormats/PointsCloud.h"
 
 #include "SYCLCore/Product.h"
+#include "SYCLCore/PluginWrapper.h"
 #include "SYCLCore/ScopedContext.h"
 
 #include "SYCLDataFormats/PointsCloudSYCL.h"
@@ -24,12 +25,12 @@ public:
 private:
   void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
   edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> token_device_clusters;
-  edm::EDPutTokenT<cms::sycltools::Product<PluginWrapper<PointsCloud, CLUEOutputProducer>>> token_output_dir;
+  edm::EDPutTokenT<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>> token_output_dir;
 };
 
 CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
     : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()),
-      token_output_dir(reg.produces<cms::sycltools::Product<PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
+      token_output_dir(reg.produces<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
 
 void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
   auto outDir = eventSetup.get<std::filesystem::path>();
