@@ -22,7 +22,7 @@ namespace {
     std::cout
         << name
         << ": [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile "
-           "PATH] [--configFile] [--transfer] [--validation] "
+           "PATH] [--configFile PATH] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
         << " --device             Specifies the device which should run the code (default not set. Possibilities are: "
