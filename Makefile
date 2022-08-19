@@ -100,8 +100,7 @@ endif
 DATA_BASE := $(BASE_DIR)/data
 export DATA_DEPS := $(DATA_BASE)/data_ok
 DATA_TAR_GZ := $(DATA_BASE)/data.tar.gz
-DATA_INPUT_TAR_GZ := $(DATA_BASE)/data_input.tar.gz
-DATA_REF_TAR_GZ := $(DATA_BASE)/data_reference.tar.gz
+DATA_CLUE_TAR_GZ := $(DATA_BASE)/clue_data.tar.gz
 
 # External definitions
 EXTERNAL_BASE := $(BASE_DIR)/external
@@ -130,13 +129,6 @@ ifneq ($(shell [ -f /etc/redhat-release ] && grep -q 'release 7' /etc/redhat-rel
 TBB_CXXFLAGS += -DTBB_ALLOCATOR_TRAITS_BROKEN
 TBB_CMAKEFLAGS += -DCMAKE_CXX_FLAGS=-DTBB_ALLOCATOR_TRAITS_BROKEN
 endif
-
-EIGEN_BASE := $(EXTERNAL_BASE)/eigen
-export EIGEN_DEPS := $(EIGEN_BASE)
-export EIGEN_CXXFLAGS := -isystem $(EIGEN_BASE) -DEIGEN_DONT_PARALLELIZE
-export EIGEN_LDFLAGS :=
-export EIGEN_NVCC_CXXFLAGS := --diag-suppress 20014
-export EIGEN_SYCL_CXXFLAGS := -DEIGEN_USE_SYCL -fsycl-enable-function-pointers
 
 BOOST_BASE := /usr
 # Minimum required version of Boost, e.g. 1.78.0
@@ -391,7 +383,7 @@ test_auto: $(TEST_AUTO_TARGETS)
 .PHONY: test_auto $(TEST_AUTO_TARGETS)
 .PHONY: format $(patsubst %,format_%,$(TARGETS_ALL))
 .PHONY: environment print_targets clean distclean dataclean
-.PHONY: external_tbb external_cub external_eigen external_kokkos external_kokkos_clean
+.PHONY: external_tbb external_cub external_kokkos external_kokkos_clean
 
 environment: env.sh
 env.sh: Makefile
@@ -524,23 +516,21 @@ endef
 $(foreach target,$(TARGETS_ALL),$(eval $(call CLEAN_template,$(target))))
 
 # Data rules
-$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_INPUT_TAR_GZ) $(DATA_REF_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/input/md5_input.txt $(DATA_BASE)/output/reference/md5_reference.txt
+$(DATA_DEPS): $(DATA_TAR_GZ) $(DATA_CLUE_TAR_GZ) | $(DATA_BASE)/md5.txt $(DATA_BASE)/md5_clue.txt
 	cd $(DATA_BASE) && tar zxf $(DATA_TAR_GZ)
 	cd $(DATA_BASE) && md5sum *.bin | diff -u md5.txt -
-	cd $(DATA_BASE)/input && tar zxf $(DATA_INPUT_TAR_GZ)
-	cd $(DATA_BASE)/input && md5sum *.csv | diff -u md5_input.txt -
-	cd $(DATA_BASE)/output/reference && tar zxf $(DATA_REF_TAR_GZ)
-	cd $(DATA_BASE)/output/reference && md5sum *.csv | diff -u md5_reference.txt -
+	cd $(DATA_BASE) && tar zxf $(DATA_CLUE_TAR_GZ)
+	cd $(DATA_BASE) && md5sum *.csv | diff -u md5_clue.txt -
+	cd $(DATA_BASE) && mkdir input && mkdir output && cd $(DATA_BASE)/output && mkdir reference 
+	cd $(DATA_BASE) && mv ref* $(DATA_BASE)/output/reference 
+	cd $(DATA_BASE) && mv *.csv $(DATA_BASE)/input 
 	touch $(DATA_DEPS)
 
 $(DATA_TAR_GZ): | $(DATA_BASE)/url.txt
 	curl -L -s -S $(shell cat $(DATA_BASE)/url.txt) -o $@
 
-$(DATA_INPUT_TAR_GZ): | $(DATA_BASE)/input/url_input.txt
-	curl -L -s -S $(shell cat $(DATA_BASE)/input/url_input.txt) -o $@
-
-$(DATA_REF_TAR_GZ): | $(DATA_BASE)/output/reference/url_reference.txt
-	curl -L -s -S $(shell cat $(DATA_BASE)/output/reference/url_reference.txt) -o $@
+$(DATA_CLUE_TAR_GZ): | $(DATA_BASE)/url_clue.txt
+	curl -L -s -S $(shell cat $(DATA_BASE)/url_clue.txt) -o $@
 
 # External rules
 $(EXTERNAL_BASE):
@@ -568,16 +558,6 @@ $(TBB_LIB):
 	$(eval undefine TBB_TMP_SRC)
 	$(eval undefine TBB_TMP_BUILD)
 
-# Eigen
-external_eigen: $(EIGEN_BASE)
-
-$(EIGEN_BASE):
-	# from Eigen master branch as of 2021.08.18
-	#git clone -b cms/master/82dd3710dac619448f50331c1d6a35da673f764a https://github.com/cms-externals/eigen-git-mirror.git $@
-	git clone https://gitlab.com/libeigen/eigen.git $@
-	# include all Patatrack updates
-	#cd $@ && git reset --hard 6294f3471cc18068079ec6af8ceccebe34b40021
-	cd $@ && git reset --hard 34780d8bd13d0af0cf17a22789ef286e8512594d
 # Boost
 .PHONY: external_boost
 external_boost: $(BOOST_BASE)
