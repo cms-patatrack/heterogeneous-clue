@@ -38,6 +38,7 @@ namespace {
 
 int main(int argc, char** argv) try {
   // Parse command line arguments
+  setenv("SYCL_DEVICE_FILTER", "cpu,gpu", true);
   std::vector<std::string> args(argv, argv + argc);
   int numberOfThreads = 1;
   int numberOfStreams = 0;
@@ -172,6 +173,7 @@ int main(int argc, char** argv) try {
             << std::defaultfloat << (maxEvents / time) << " events/s, CPU usage per thread: " << std::fixed
             << std::setprecision(1) << (cpu / time / numberOfThreads * 100) << "%" << std::endl;
   return EXIT_SUCCESS;
+  unsetenv("SYCL_DEVICE_FILTER");
 } catch (sycl::exception const& exc) {
   std::cerr << exc.what() << "Exception caught at file:" << __FILE__ << ", line:" << __LINE__ << std::endl;
   std::exit(1);
