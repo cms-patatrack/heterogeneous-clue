@@ -5,7 +5,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib>
 
 #include <tbb/global_control.h>
 #include <tbb/info.h>
