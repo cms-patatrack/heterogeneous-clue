@@ -47,7 +47,6 @@ void CLUEAlgoSYCL::setup(PointsCloud const &host_pc) {
   (*queue_).memset(d_hist, 0x00, sizeof(LayerTilesSYCL) * NLAYERS);
   (*queue_).memset(d_seeds, 0x00, sizeof(cms::sycltools::VecArray<int, maxNSeeds>));
   (*queue_).memset(d_followers, 0x00, sizeof(cms::sycltools::VecArray<int, maxNFollowers>) * host_pc.n).wait();
-  d_points.n = host_pc.n;
 }
 
 void CLUEAlgoSYCL::makeClusters(PointsCloud const &host_pc) {
