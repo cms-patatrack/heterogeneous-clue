@@ -36,3 +36,5 @@
 !config/test_without_output.csv
 #dev
 /.vscode
+#plots 
+/plots
