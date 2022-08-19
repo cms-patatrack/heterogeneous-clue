@@ -13,6 +13,7 @@
 
 #include <CL/sycl.hpp>
 
+#include "DataFormats/CLUE_config.h"
 #include "SYCLCore/chooseDevice.h"
 #include "EventProcessor.h"
 #include "PosixClockGettime.h"
@@ -36,7 +37,7 @@ namespace {
         << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
            "'data/input/toyDetector_1k.csv')\n"
         << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
-           "produceOutput) to run CLUE (implies --transfer, default 'config/test_without_output.csv' in the directory "
+           "produceOutput) to run CLUE (default 'config/test_without_output.csv' in the directory "
            "of the exectuable)\n"
         << " --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)\n"
         << " --validation        Run (rudimentary) validation at the end (implies --transfer)\n"
@@ -87,7 +88,6 @@ int main(int argc, char** argv) try {
       inputFile = *i;
     } else if (*i == "--configFile") {
       ++i;
-      transfer = true;
       configFile = *i;
     } else if (*i == "--transfer") {
       transfer = true;
@@ -134,6 +134,30 @@ int main(int argc, char** argv) try {
 
   // Initialise the SYCL runtime
   cms::sycltools::enumerateDevices(true);
+
+  Parameters par;
+  std::ifstream iFile(configFile);
+  std::string value = "";
+  while (getline(iFile, value, ',')) {
+    par.dc = std::stof(value);
+    getline(iFile, value, ',');
+    par.rhoc = std::stof(value);
+    getline(iFile, value, ',');
+    par.outlierDeltaFactor = std::stof(value);
+    getline(iFile, value);
+    par.produceOutput = static_cast<bool>(std::stoi(value));
+  }
+  iFile.close();
+
+  std::cout << "Running CLUE algorithm with the following parameters: \n";
+  std::cout << "dc = " << par.dc << '\n';
+  std::cout << "rhoc = " << par.rhoc << '\n';
+  std::cout << "outlierDeltaFactor = " << par.outlierDeltaFactor << std::endl;
+
+  if (par.produceOutput) {
+    transfer = true;
+    std::cout << "Producing output at the end" << std::endl;
+  }
 
   // Initialise the EventProcessor
   std::vector<std::string> edmodules;

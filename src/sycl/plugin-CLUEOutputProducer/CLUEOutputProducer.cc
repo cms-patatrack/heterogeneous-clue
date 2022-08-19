@@ -52,11 +52,11 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
   stream.memcpy(results.isSeed.data(), device_clusters.isSeed.get(), device_clusters.n * sizeof(int));
   stream.memcpy(results.clusterIndex.data(), device_clusters.clusterIndex.get(), device_clusters.n * sizeof(int)).wait();
 
-  std::cout << "Data transfered back to host" << std::endl;
+  std::cout << "Data transferred back to host" << std::endl;
 
   Parameters par;
   par = eventSetup.get<Parameters>();
-  if (par.verbose) {
+  if (par.produceOutput) {
     auto temp_outDir = eventSetup.get<std::filesystem::path>();
     std::string input_file_name = temp_outDir.filename();
     std::string output_file_name = create_outputfileName(input_file_name, par.dc, par.rhoc, par.outlierDeltaFactor);

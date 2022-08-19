@@ -33,12 +33,12 @@ void CLUEAlgoSYCL::free_device() {
 }
 
 void CLUEAlgoSYCL::setup(PointsCloud const &host_pc) {
-  // copy input variables
+  // input variables
   (*queue_).memcpy(d_points.x.get(), host_pc.x.data(), sizeof(float) * host_pc.n);
   (*queue_).memcpy(d_points.y.get(), host_pc.y.data(), sizeof(float) * host_pc.n);
   (*queue_).memcpy(d_points.layer.get(), host_pc.layer.data(), sizeof(int) * host_pc.n);
   (*queue_).memcpy(d_points.weight.get(), host_pc.weight.data(), sizeof(float) * host_pc.n);
-  // initialize result and internal variables
+  // result and internal variables
   (*queue_).memset(d_points.rho.get(), 0x00, sizeof(float) * host_pc.n);
   (*queue_).memset(d_points.delta.get(), 0x00, sizeof(float) * host_pc.n);
   (*queue_).memset(d_points.nearestHigher.get(), 0x00, sizeof(int) * host_pc.n);
@@ -52,8 +52,6 @@ void CLUEAlgoSYCL::setup(PointsCloud const &host_pc) {
 
 void CLUEAlgoSYCL::makeClusters(PointsCloud const &host_pc) {
   setup(host_pc);
-  // calculate rho, delta and find seeds
-  // 1 point per thread
   const int numThreadsPerBlock = 256;  // ThreadsPerBlock = work-group size
   const sycl::range<1> blockSize(numThreadsPerBlock);
   const sycl::range<1> gridSize(ceil(d_points.n / static_cast<float>(blockSize[0])));
@@ -107,10 +105,7 @@ void CLUEAlgoSYCL::makeClusters(PointsCloud const &host_pc) {
     });
   });
 
-  // assign clusters
-  // 1 point per seeds
   const sycl::range<1> gridSize_nseeds(ceil(maxNSeeds / static_cast<double>(blockSize[0])));
-
   (*queue_).submit([&](sycl::handler &cgh) {
     auto d_seeds_kernel = d_seeds;
     auto d_followers_kernel = d_followers;

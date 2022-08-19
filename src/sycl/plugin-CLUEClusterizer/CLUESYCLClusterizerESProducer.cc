@@ -25,7 +25,7 @@ void CLUESYCLClusterizerESProducer::produce(edm::EventSetup& eventSetup) {
     getline(iFile, value, ',');
     par.outlierDeltaFactor = std::stof(value);
     getline(iFile, value);
-    par.verbose = static_cast<bool>(std::stoi(value));
+    par.produceOutput = static_cast<bool>(std::stoi(value));
   }
   iFile.close();
 
