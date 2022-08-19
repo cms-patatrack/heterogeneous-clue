@@ -1,15 +1,14 @@
 #ifndef SYCL_VEC_ARRAY_H
 #define SYCL_VEC_ARRAY_H
+
 #include <CL/sycl.hpp>
+#include "SYCLCore/syclAtomic.h"
 
 //
 // Author: Felice Pantaleo, CERN
 //
 namespace cms {
   namespace sycltools {
-    inline int atomicAdd(int *i, int j = 1) { return sycl::atomic<int>(sycl::global_ptr<int>(i)).fetch_add(j); }
-
-    inline int atomicSub(int *i, int j = 1) { return atomicAdd(i, -j); }
 
     template <class T, int maxSize>
     struct VecArray {
@@ -47,24 +46,24 @@ namespace cms {
 
       // thread-safe version of the vector, when used in a CUDA kernel
       int push_back(const T &element) {
-        auto previousSize = atomicAdd(&m_size, 1);
+        auto previousSize = AtomicAdd(&m_size, 1);
         if (previousSize < maxSize) {
           m_data[previousSize] = element;
           return previousSize;
         } else {
-          atomicSub(&m_size, 1);
+          AtomicSub(&m_size, 1);
           return -1;
         }
       }
 
       template <class... Ts>
       int emplace_back(Ts &&...args) {
-        auto previousSize = atomicAdd(&m_size, 1);
+        auto previousSize = AtomicAdd(&m_size, 1);
         if (previousSize < maxSize) {
           (new (&m_data[previousSize]) T(std::forward<Ts>(args)...));
           return previousSize;
         } else {
-          atomicSub(&m_size, 1);
+          AtomicSub(&m_size, 1);
           return -1;
         }
       }
