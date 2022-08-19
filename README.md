@@ -27,13 +27,24 @@ This will produce an executable tailored for any CUDA GPU. Note that the environ
 # 2. Running Heterogeneous-CLUE
 
 ## SYCL
+CLUE needs three parameters to run: `dc`, `rhoc` and `outlierDeltaFactor`. 
+
+_dc_ is the critical distance used to compute the local density.
+_rhoc_ is the minimum local density for a point to be promoted as a Seed.
+_outlierDeltaFactor_ is  a multiplicative constant to be applied to `dc`.
+
+A default set of these parameters, together with `produceOutput` (boolean which specifies whether to produce a csv output file or not) is found as a configuration file (.csv) in [`config`](config). Any other configuration can be passed to the program through a similar file which should follow the format:
+```bash
+[dc],[rhoc],[outlierDeltaFactor],[produceOutput]
+```
+
 The procedure to run the algorithm is the same on both CUDA and Intel backends.
 Executing the program is as simple as running:
 ```bash
 ./sycl
 ```
 
-There are many runtime options available:
+Other than the configuration file which we've already touched, many other options are available at runtime:
 
 ```
 ./sycl: [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile PATH] [--configFile PATH] [--transfer] [--validation] [--empty]
@@ -46,21 +57,10 @@ Options
  --runForMinutes     Continue processing the set of 1000 events until this many minutes have passed (default -1 for disabled; conflicts with --maxEvents)
  --data              Path to the 'data' directory (default 'data' in the directory of the executable)
  --inputFile         Path to the input file to cluster with CLUE (default is set to 'data/input/toyDetector_1k.csv')
- --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, produceOutput) to run CLUE (implies --transfer, default 'config/test_without_output.csv' in the directory of the exectuable)
+ --configFile        Path to the configuration file with the parameters (dc, rhoc, outlierDeltaFactor, produceOutput) to run CLUE (default 'config/test_without_output.csv' in the directory of the exectuable)
  --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)
  --validation        Run (rudimentary) validation at the end (implies --transfer)
  --empty             Ignore all producers (for testing only)
-```
-
-CLUE needs three parameters to run: `dc`, `rhoc` and `outlierDeltaFactor`. 
-
-_dc_ is the critical distance used to compute the local density.
-_rhoc_ is the minimum local density for a point to be promoted as a Seed.
-_outlierDeltaFactor_ is  a multiplicative constant to be applied to `dc`.
-
-A default set of these parameters, together with `produceOutput` (boolean which specifies whether to produce a csv output file or not) is found as a configuration file (.csv) in [`config`](config). Any other configuration can be passed to the program through a similar file which should follow the format:
-```bash
-[dc],[rhoc],[outlierDeltaFactor],[produceOutput]
 ```
 
 # 3. Details
