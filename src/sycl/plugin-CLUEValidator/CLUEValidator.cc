@@ -6,6 +6,7 @@
 
 #include "DataFormats/FEDRawDataCollection.h"
 #include "DataFormats/PointsCloud.h"
+#include "DataFormats/CLUE_config.h"
 
 #include "Framework/EDProducer.h"
 #include "Framework/Event.h"
@@ -38,7 +39,7 @@ private:
   bool arraysAreEqual(std::vector<T>, std::vector<T> trueDataArr);
   bool arraysClustersEqual(const PointsCloud& devicePC, const PointsCloud& truePC);
   std::string checkValidation(std::string const& inputFile);
-  void validateOutput(const PointsCloud& pc, std::string trueOutFilePath);
+  void validateOutput(const PointsCloud& pc, std::string trueOutFilePath, Parameters const& par);
   edm::EDGetTokenT<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>
       resultsTokenPC_;
 };
@@ -129,20 +130,20 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
   auto const& pcProduct = event.get(resultsTokenPC_);
   cms::sycltools::ScopedContextProduce ctx{pcProduct};
   auto const& pc = ctx.get(pcProduct).get();
+  auto const& par = eventSetup.get<Parameters>();
 
   if (checkValidation(outDataDir->outFile) != std::string()) {
     auto ref_file = checkValidation(outDataDir->outFile);
     std::filesystem::path ref_path = outDataDir->outFile.parent_path() / "reference";
     std::cout << "Validating output results from " << ref_path / ref_file << std::endl;
-    validateOutput(pc, ref_path / ref_file);
-    std::cout << "CLUE output is correct!" << '\n';
+    validateOutput(pc, ref_path / ref_file, par);
   } else {
     std::cout << "\nThere is no reference output data for the input file selected.\n";
     std::cout << "Please select one of the toyDetectors input files to validate the plugin results\n" << std::endl;
   }
 }
 
-void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFilePath) {
+void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFilePath, Parameters const& par) {
   PointsCloud truePC;
   std::ifstream iTrueDataFile(trueOutFilePath);
   std::string value = "";
@@ -178,16 +179,34 @@ void CLUEValidator::validateOutput(const PointsCloud& pc, std::string trueOutFil
   }
   iTrueDataFile.close();
 
-  assert(arraysAreEqual(pc.rho, truePC.rho));
-  std::cout << "Output rho -> Ok" << '\n';
-  assert(arraysAreEqual(CLAMPED(pc.delta, 999), truePC.delta));
-  std::cout << "Output delta -> Ok" << '\n';
-  assert(arraysAreEqual(pc.nearestHigher, truePC.nearestHigher));
-  std::cout << "Output nearestHigher -> Ok" << '\n';
-  assert(arraysAreEqual(pc.isSeed, truePC.isSeed));
-  std::cout << "Output isSeed -> Ok" << '\n';
-  assert(arraysClustersEqual(pc, truePC));
-  std::cout << "Output cluster indexes -> Ok" << '\n';
+  // input variables
+  assert(arraysAreEqual(pc.x, truePC.x));
+  std::cout << "Output x -> Ok" << '\n';
+  assert(arraysAreEqual(pc.y, truePC.y));
+  std::cout << "Output y -> Ok" << '\n';
+  assert(arraysAreEqual(pc.layer, truePC.layer));
+  std::cout << "Output layer -> Ok" << '\n';
+  assert(arraysAreEqual(pc.weight, truePC.weight));
+  std::cout << "Output weight -> Ok" << '\n';
+  std::cout << "Input variables are correct!" << std::endl;
+
+  if (par.dc == 20 && par.rhoc == 25 && par.outlierDeltaFactor == 2) {
+    // result variables
+    std::cout << "Using the same parameters as reference file, checking output results" << '\n';
+    assert(arraysAreEqual(pc.rho, truePC.rho));
+    std::cout << "Output rho -> Ok" << '\n';
+    assert(arraysAreEqual(CLAMPED(pc.delta, 999), truePC.delta));
+    std::cout << "Output delta -> Ok" << '\n';
+    assert(arraysAreEqual(pc.nearestHigher, truePC.nearestHigher));
+    std::cout << "Output nearestHigher -> Ok" << '\n';
+    assert(arraysAreEqual(pc.isSeed, truePC.isSeed));
+    std::cout << "Output isSeed -> Ok" << '\n';
+    assert(arraysClustersEqual(pc, truePC));
+    std::cout << "Output cluster IDs -> Ok" << '\n';
+    std::cout << "CLUE output is correct!" << std::endl;
+  } else {
+    std::cout << "Parameters different from the ones used in the reference file, cannot check results" << std::endl;
+  }
 }
 
 DEFINE_FWK_MODULE(CLUEValidator);
