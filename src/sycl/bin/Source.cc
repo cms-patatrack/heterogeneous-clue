@@ -10,7 +10,6 @@ namespace {
     PointsCloud data;
     for (int l = 0; l < NLAYERS; l++) {
       std::string value = "";
-      // Iterate through each line and split the content using delimeter
       while (getline(is, value, ',')) {
         data.x.push_back(std::stof(value));
         getline(is, value, ',');
@@ -21,6 +20,7 @@ namespace {
         data.weight.push_back(std::stof(value));
       }
     }
+    data.n = data.x.size();
     return data;
   }
 }  // namespace
@@ -28,14 +28,13 @@ namespace {
 namespace edm {
   Source::Source(int maxEvents, int runForMinutes, ProductRegistry &reg, std::filesystem::path const &inputFile)
       : maxEvents_(maxEvents), runForMinutes_(runForMinutes), cloudToken_(reg.produces<PointsCloud>()) {
-    std::ifstream iFile(inputFile);
-
     if (runForMinutes_ < 0 and maxEvents_ < 0) {
       maxEvents_ = 10;
     }
-
     for (int i = 0; i != maxEvents_; i++) {
+      std::ifstream iFile(inputFile);
       cloud_.emplace_back(readFile(iFile));
+      iFile.close();
     }
   }
 

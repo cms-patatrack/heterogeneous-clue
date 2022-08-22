@@ -151,15 +151,13 @@ int main(int argc, char** argv) try {
   std::vector<std::string> edmodules;
   std::vector<std::string> esmodules;
   if (not empty) {
-    edmodules = {"PointsCloudProducer", "CLUESYCLClusterizer"};
-    esmodules = {"PointsCloudESProducer", "CLUESYCLClusterizerESProducer"};
+    edmodules = {"CLUESYCLClusterizer"};
+    esmodules = {"CLUESYCLClusterizerESProducer"};
     if (transfer) {
       esmodules.emplace_back("CLUEOutputESProducer");
       edmodules.emplace_back("CLUEOutputProducer");
     }
     if (validation) {
-      esmodules.emplace_back("ValidatorPointsCloudESProducer");
-      edmodules.emplace_back("ValidatorPointsCloudToSYCL");
       esmodules.emplace_back("CLUEValidatorESProducer");
       edmodules.emplace_back("CLUEValidator");
     }
