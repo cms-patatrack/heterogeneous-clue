@@ -21,7 +21,7 @@ namespace {
   void print_help(std::string const& name) {
     std::cout
         << name
-        << ": [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile "
+        << ": [--device DEV] [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--inputFile "
            "PATH] [--configFile PATH] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
@@ -32,7 +32,6 @@ namespace {
         << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
         << " --runForMinutes     Continue processing the set of 1000 events until this many minutes have passed "
            "(default -1 for disabled; conflicts with --maxEvents)\n"
-        << " --data              Path to the 'data' directory (default 'data' in the directory of the executable)\n"
         << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
            "'data/input/toyDetector_1k.csv')\n"
         << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
@@ -53,7 +52,6 @@ int main(int argc, char** argv) try {
   int numberOfStreams = 0;
   int maxEvents = -1;
   int runForMinutes = -1;
-  std::filesystem::path datadir;
   std::filesystem::path inputFile;
   std::filesystem::path configFile;
   bool transfer = false;
@@ -79,9 +77,6 @@ int main(int argc, char** argv) try {
     } else if (*i == "--runForMinutes") {
       ++i;
       runForMinutes = std::stoi(*i);
-    } else if (*i == "--data") {
-      ++i;
-      datadir = *i;
     } else if (*i == "--inputFile") {
       ++i;
       inputFile = *i;
@@ -111,24 +106,19 @@ int main(int argc, char** argv) try {
   if (numberOfStreams == 0) {
     numberOfStreams = numberOfThreads;
   }
-  if (datadir.empty()) {
-    datadir = std::filesystem::path(args[0]).parent_path() / "data";
-  }
-  if (not std::filesystem::exists(datadir)) {
-    std::cout << "Data directory '" << datadir << "' does not exist" << std::endl;
-    return EXIT_FAILURE;
-  }
   if (inputFile.empty()) {
     inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/toyDetector_1k.csv";
   }
   if (not std::filesystem::exists(inputFile)) {
     std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;
+    return EXIT_FAILURE;
   }
   if (configFile.empty()) {
     configFile = std::filesystem::path(args[0]).parent_path() / "config" / "test_without_output.csv";
   }
   if (not std::filesystem::exists(configFile)) {
     std::cout << "Config file '" << configFile << "' does not exist" << std::endl;
+    return EXIT_FAILURE;
   }
 
   // Initialise the SYCL runtime
@@ -175,15 +165,8 @@ int main(int argc, char** argv) try {
       edmodules.emplace_back("CLUEValidator");
     }
   }
-  edm::EventProcessor processor(maxEvents,
-                                runForMinutes,
-                                numberOfStreams,
-                                std::move(edmodules),
-                                std::move(esmodules),
-                                datadir,
-                                inputFile,
-                                configFile,
-                                validation);
+  edm::EventProcessor processor(
+      maxEvents, runForMinutes, numberOfStreams, std::move(edmodules), std::move(esmodules), inputFile, configFile);
   if (runForMinutes < 0) {
     std::cout << "Processing " << processor.maxEvents() << " events, of which " << numberOfStreams
               << " concurrently, with " << numberOfThreads << " threads." << std::endl;
