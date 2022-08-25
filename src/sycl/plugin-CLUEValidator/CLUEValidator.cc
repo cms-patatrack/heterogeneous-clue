@@ -15,7 +15,6 @@
 
 #include "SYCLCore/Product.h"
 #include "SYCLCore/ScopedContext.h"
-#include "SYCLCore/PluginWrapper.h"
 
 #include "SYCLDataFormats/PointsCloudSYCL.h"
 
@@ -40,13 +39,11 @@ private:
   bool arraysClustersEqual(const PointsCloud& devicePC, const PointsCloud& truePC);
   std::string checkValidation(std::string const& inputFile);
   void validateOutput(const PointsCloud& pc, std::string trueOutFilePath, Parameters const& par);
-  edm::EDGetTokenT<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>
-      resultsTokenPC_;
+  edm::EDGetTokenT<cms::sycltools::Product<PointsCloud>> resultsTokenPC_;
 };
 
 CLUEValidator::CLUEValidator(edm::ProductRegistry& reg)
-    : resultsTokenPC_(
-          reg.consumes<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
+    : resultsTokenPC_(reg.consumes<cms::sycltools::Product<PointsCloud>>()) {}
 
 template <class T>
 bool CLUEValidator::arraysAreEqual(std::vector<T> devicePtr, std::vector<T> trueDataArr) {
@@ -129,7 +126,7 @@ void CLUEValidator::produce(edm::Event& event, edm::EventSetup const& eventSetup
 
   auto const& pcProduct = event.get(resultsTokenPC_);
   cms::sycltools::ScopedContextProduce ctx{pcProduct};
-  auto const& pc = ctx.get(pcProduct).get();
+  auto const& pc = ctx.get(pcProduct);
   auto const& par = eventSetup.get<Parameters>();
 
   if (checkValidation(outDataDir->outFile) != std::string()) {

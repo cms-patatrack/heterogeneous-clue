@@ -13,7 +13,6 @@
 #include "DataFormats/PointsCloud.h"
 
 #include "SYCLCore/Product.h"
-#include "SYCLCore/PluginWrapper.h"
 #include "SYCLCore/ScopedContext.h"
 
 #include "SYCLDataFormats/PointsCloudSYCL.h"
@@ -24,28 +23,25 @@ public:
 
 private:
   void produce(edm::Event& event, edm::EventSetup const& eventSetup) override;
-  edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> token_device_clusters;
-  edm::EDPutTokenT<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>> token_output_dir;
+  edm::EDGetTokenT<cms::sycltools::Product<PointsCloudSYCL>> deviceClustersToken_;
+  edm::EDPutTokenT<cms::sycltools::Product<PointsCloud>> resultsToken_;
+  edm::EDGetTokenT<PointsCloud> pointsCloudToken_;
 };
 
 CLUEOutputProducer::CLUEOutputProducer(edm::ProductRegistry& reg)
-    : token_device_clusters(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()),
-      token_output_dir(reg.produces<cms::sycltools::Product<cms::sycltools::PluginWrapper<PointsCloud, CLUEOutputProducer>>>()) {}
+    : deviceClustersToken_(reg.consumes<cms::sycltools::Product<PointsCloudSYCL>>()),
+      resultsToken_(reg.produces<cms::sycltools::Product<PointsCloud>>()),
+      pointsCloudToken_(reg.consumes<PointsCloud>()) {}
 
 void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& eventSetup) {
   auto outDir = eventSetup.get<std::filesystem::path>();
-
-  auto const& pcProduct = event.get(token_device_clusters);
+  PointsCloud results = event.get(pointsCloudToken_);
+  auto const& pcProduct = event.get(deviceClustersToken_);
   cms::sycltools::ScopedContextProduce ctx{pcProduct};
   auto const& device_clusters = ctx.get(pcProduct);
-
   auto stream = ctx.stream();
 
-  PointsCloud results(device_clusters.n);
-  stream.memcpy(results.x.data(), device_clusters.x.get(), device_clusters.n * sizeof(float));
-  stream.memcpy(results.y.data(), device_clusters.y.get(), device_clusters.n * sizeof(float));
-  stream.memcpy(results.layer.data(), device_clusters.layer.get(), device_clusters.n * sizeof(int));
-  stream.memcpy(results.weight.data(), device_clusters.weight.get(), device_clusters.n * sizeof(float));
+  results.outResize(device_clusters.n);
   stream.memcpy(results.rho.data(), device_clusters.rho.get(), device_clusters.n * sizeof(float));
   stream.memcpy(results.delta.data(), device_clusters.delta.get(), device_clusters.n * sizeof(float));
   stream.memcpy(results.nearestHigher.data(), device_clusters.nearestHigher.get(), device_clusters.n * sizeof(int));
@@ -76,6 +72,6 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
     std::cout << "Ouput was saved in " << outDir << std::endl;
   }
 
-  ctx.emplace(event, token_output_dir, std::move(results));
+  ctx.emplace(event, resultsToken_, std::move(results));
 }
 DEFINE_FWK_MODULE(CLUEOutputProducer);
