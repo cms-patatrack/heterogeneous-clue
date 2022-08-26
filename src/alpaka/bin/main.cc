@@ -34,7 +34,7 @@ namespace {
 #ifdef ALPAKA_ACC_GPU_HIP_PRESENT
         << "[--hip] "
 #endif
-        << "[--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--data PATH] [--inputFile "
+        << "[--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--inputFile "
            "PATH] [--configFile] [--transfer] [--validation] "
            "[--empty]\n\n"
         << "Options\n"
@@ -55,7 +55,6 @@ namespace {
         << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
         << " --runForMinutes     Continue processing the set of 1000 events until this many minutes have passed "
            "(default -1 for disabled; conflicts with --maxEvents)\n"
-        << " --data              Path to the 'data' directory (default 'data' in the directory of the executable)\n"
         << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
            "data/input/toyDetector_1k.csv)'\n"
         << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
