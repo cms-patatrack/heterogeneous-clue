@@ -35,7 +35,7 @@ inline std::string create_outputfileName(std::string inputFileName, float dc, fl
   std::regex_replace(back_inserter(tmpFileName), inputFileName.begin(), inputFileName.end(), regexp, "output");
 
   std::string outputFileName;
-  std::regex regexp2(".csv");
+  std::regex regexp2(".bin");
   std::regex_replace(back_inserter(outputFileName), tmpFileName.begin(), tmpFileName.end(), regexp2, suffix);
 
   return outputFileName;

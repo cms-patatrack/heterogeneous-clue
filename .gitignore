@@ -9,8 +9,7 @@
 /env.sh
 # data
 /data/*.tar.gz
-/data/*.bin
-/data/input/*.csv
+/data/input/*.bin
 /data/output/*.csv
 /data/output/reference/*.csv
 /data/data_ok

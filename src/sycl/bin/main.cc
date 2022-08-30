@@ -32,7 +32,7 @@ namespace {
         << " --runForMinutes     Continue processing the set of 1000 events until this many minutes have passed "
            "(default -1 for disabled; conflicts with --maxEvents)\n"
         << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
-           "'data/input/toyDetector_1k.csv')\n"
+           "'data/input/toyDetector_1k.bin')\n"
         << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
            "produceOutput) to run CLUE (default 'config/test_without_output.csv' in the directory "
            "of the exectuable)\n"
@@ -106,7 +106,7 @@ int main(int argc, char** argv) try {
     numberOfStreams = numberOfThreads;
   }
   if (inputFile.empty()) {
-    inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/toyDetector_1k.csv";
+    inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/toyDetector_1k.bin";
   }
   if (not std::filesystem::exists(inputFile)) {
     std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;
