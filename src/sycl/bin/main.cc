@@ -137,10 +137,10 @@ int main(int argc, char** argv) try {
   }
   iFile.close();
 
-  std::cout << "Running CLUE algorithm with the following parameters: \n";
-  std::cout << "dc = " << par.dc << '\n';
-  std::cout << "rhoc = " << par.rhoc << '\n';
-  std::cout << "outlierDeltaFactor = " << par.outlierDeltaFactor << std::endl;
+  std::cerr << "Running CLUE algorithm with the following parameters: \n";
+  std::cerr << "dc = " << par.dc << '\n';
+  std::cerr << "rhoc = " << par.rhoc << '\n';
+  std::cerr << "outlierDeltaFactor = " << par.outlierDeltaFactor << std::endl;
 
   if (par.produceOutput) {
     transfer = true;

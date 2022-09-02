@@ -57,35 +57,18 @@ namespace {
 namespace edm {
   Source::Source(int maxEvents, int runForMinutes, ProductRegistry &reg, std::filesystem::path const &inputFile)
       : maxEvents_(maxEvents), runForMinutes_(runForMinutes), cloudToken_(reg.produces<PointsCloud>()) {
+    std::string input(inputFile);
+    if (input.find("layers") != std::string::npos) {
+      cloud_.emplace_back(readRaw(inputFile));
+    } else {
+      cloud_.emplace_back(readRawLayers(inputFile));
+    }
+
     if (runForMinutes_ < 0 and maxEvents_ < 0) {
       maxEvents_ = 10;
     }
-    std::string input(inputFile);
-    bool repeat_layers = false;
-
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i != maxEvents_; i++) {
-      if (input.find("layers") != std::string::npos) {
-        cloud_.emplace_back(readRaw(inputFile));
-      } else {
-        cloud_.emplace_back(readRawLayers(inputFile));
-        repeat_layers = true;
-      }
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto diff = end - start;
-    auto time = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(diff).count()) / 1e6;
-
-    if (repeat_layers) {
-      std::cout << "Emplacing from binary, layers repeated\n";
-    } else {
-      std::cout << "Emplacing from binary, no data repetition\n";
-    }
-
-    std::cout << "Read data for " << maxEvents_ << " events in " << std::scientific << time
-              << " seconds, maximum throughput " << std::defaultfloat << (maxEvents_ / time) << " events/s"
-              << std::endl;
   }
+
   void Source::startProcessing() {
     if (runForMinutes_ >= 0) {
       startTime_ = std::chrono::steady_clock::now();
