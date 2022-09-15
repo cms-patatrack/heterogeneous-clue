@@ -33,7 +33,7 @@
 /.vscode
 #config
 /config/*.csv
-!config/test_output.csv
-!config/test_without_output.csv
+!config/hgcal_config.csv
+!config/toyDetector_config.csv
 #plots 
 /plots
