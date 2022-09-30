@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <optional>
 
 #include <CL/sycl.hpp>
 
@@ -104,7 +105,7 @@ namespace cms::sycltools {
     }
 
     // Allocate given number of bytes on the current device associated to given queue
-    void* allocate(size_t bytes, sycl::queue queue) {
+    void* allocate(size_t bytes, sycl::queue const& queue) {
       assert(queue.get_device() == device_);
       // create a block descriptor for the requested allocation
       BlockDescriptor block;
@@ -138,7 +139,7 @@ namespace cms::sycltools {
 
       bool recache = (cachedBytes_.free + block.bytes <= maxCachedBytes_) and reuseSameQueueAllocations_;
       if (recache) {
-        block.event = block.queue.ext_oneapi_submit_barrier();
+        block.event = block.queue->ext_oneapi_submit_barrier();
         cachedBytes_.free += block.bytes;
         cachedBlocks_.insert(std::make_pair(block.bin, block));
 
@@ -151,7 +152,7 @@ namespace cms::sycltools {
           std::cout << out.str() << std::endl;
         }
       } else {
-        sycl::free(block.d_ptr, block.queue);
+        sycl::free(block.d_ptr, *block.queue);
 
         if (debug_) {
           std::ostringstream out;
@@ -166,12 +167,12 @@ namespace cms::sycltools {
 
   private:
     struct BlockDescriptor {
-      sycl::queue queue;           // associated queue
-      sycl::event event;           // event to check the status of the allocated data
-      void* d_ptr;                 // poiter to data
-      size_t bytes = 0;            // bytes allocated
-      size_t bytes_requested = 0;  // bytes requested
-      unsigned int bin = 0;        // bin class id, binGrowth^bin is the block size
+      std::optional<sycl::queue> queue;  // associated queue
+      std::optional<sycl::event> event;  // event to check the status of the allocated data
+      void* d_ptr;                       // poiter to data
+      size_t bytes = 0;                  // bytes allocated
+      size_t bytes_requested = 0;        // bytes requested
+      unsigned int bin = 0;              // bin class id, binGrowth^bin is the block size
     };
     std::mutex mutex_;
 
@@ -218,7 +219,7 @@ namespace cms::sycltools {
         BlockDescriptor block = std::move(blockIterator->second);
         cachedBlocks_.erase(blockIterator);
         cachedBytes_.free -= block.bytes;
-        sycl::free(block.d_ptr, block.queue);
+        sycl::free(block.d_ptr, *block.queue);
 
         if (debug_) {
           std::ostringstream out;
@@ -259,14 +260,14 @@ namespace cms::sycltools {
       // iterate through the range of cached blocks in the same bin
       const auto [begin, end] = cachedBlocks_.equal_range(block.bin);
       for (auto blockIterator = begin; blockIterator != end; ++blockIterator) {
-        if ((reuseSameQueueAllocations_ and (block.queue == (blockIterator->second.queue))) or
-            block.event.get_info<sycl::info::event::command_execution_status>() ==
+        if ((reuseSameQueueAllocations_ and (*block.queue == *(blockIterator->second.queue))) or
+            blockIterator->second.event.value().get_info<sycl::info::event::command_execution_status>() ==
                 sycl::info::event_command_status::complete) {
-          auto queue = block.queue;
+          auto queue = std::move(block.queue);
           block = blockIterator->second;
-          block.queue = queue;
+          block.queue = std::move(queue);
 
-          block.event = block.queue.ext_oneapi_submit_barrier();
+          block.event = block.queue->ext_oneapi_submit_barrier();
 
           // insert the cached block into the live blocks
           liveBlocks_[block.d_ptr] = block;
@@ -281,7 +282,7 @@ namespace cms::sycltools {
             out << "\tDevice " << device_.get_info<sycl::info::device::name>() << " reused cached block at "
                 << block.d_ptr << " (" << block.bytes << " bytes)"
                 << " previously associated with device "
-                << (blockIterator->second.queue).get_device().get_info<sycl::info::device::name>() << std::endl;
+                << (blockIterator->second.queue)->get_device().get_info<sycl::info::device::name>() << std::endl;
             std::cout << out.str();
           }
 
@@ -294,8 +295,8 @@ namespace cms::sycltools {
       return false;
     }
 
-    void* allocateBuffer(size_t bytes, sycl::queue queue) {
-      if (queue.get_device().is_host()) {
+    void* allocateBuffer(size_t bytes, sycl::queue const& queue) {
+      if (queue.get_device().is_host()) { // TODO is_host -> data member
         return sycl::malloc_host(bytes, queue);
       } else {
         return sycl::malloc_device(bytes, queue);
@@ -304,7 +305,7 @@ namespace cms::sycltools {
 
     void allocateNewBlock(BlockDescriptor& block) {
       try {
-        block.d_ptr = allocateBuffer(block.bytes, block.queue);
+        block.d_ptr = allocateBuffer(block.bytes, *block.queue);
       } catch (const sycl::exception& e) {
         // the allocation attempt failed: free all cached blocks on the device and retry
         // NOTE: TODO implement a method that frees only up to block.bytes bytes
@@ -321,11 +322,11 @@ namespace cms::sycltools {
 
         // throw an exception if it fails again
         // NOTE: this must be checked
-        block.d_ptr = allocateBuffer(block.bytes, block.queue);
+        block.d_ptr = allocateBuffer(block.bytes, *block.queue);
       }
 
       // create a new event associated to the "synchronisation device"
-      block.event = block.queue.ext_oneapi_submit_barrier();
+      block.event = block.queue->ext_oneapi_submit_barrier();
 
       {
         std::scoped_lock lock(mutex_);
