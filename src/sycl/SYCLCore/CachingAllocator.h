@@ -14,7 +14,38 @@
 
 #include <CL/sycl.hpp>
 
-// Inspired by cub::CachingDeviceAllocator
+/* 
+  * SYCL Caching Allocator
+  * Inspired by cub::CachingDeviceAllocator and Alpaka CachingAllocator
+  * Authors: Laura Cappelli (INFN), Luca Ferragina (UniBO)
+  * 
+  * The SYCL Caching Allocator rules are similar to the CUDA ones:
+  * - Allocations from the allocator are associated with a queue. Once freed, the 
+  *   allocation becomes available immediately for reuse within the queue with
+  *   which it was associated with during allocation, and it becomes available for
+  *   reuse within other streams when all prior work submitted to queue has 
+  *   completed.
+  * - Allocations are categorized and cached by bin size. A new allocation request
+  *   of a given size will only consider cached allocations within the 
+  *   corresponding bin.
+  * - Bin limits progress geometrically in accordance with the growth factor
+  *   binGrowth provided during construction.
+  * - Allocation requests below (binGrowth ^ minBin) are rounded up to
+  *   (binGrowth ^ minBin).
+  * - Allocations above (binGrowth ^ maxBin) are not accepted
+  * - If the total storage of cached allocations on a given device exceeds 
+  *   maxCachedBytes, allocations for that device are simply freed when they are 
+  *   deallocated instead of being returned to their bin-cache.
+  *
+  * For example, the default-constructed CachingAllocator is configured with:
+  * - binGrowth          = 2
+  * - minBin             = 8
+  * - maxBin             = 30
+  * - maxCachedBytes    = unlimited
+  * which delineates 23 bin-sizes: 256B, 512B, 1kB, 2kB, 4kB, 8kB, 16kB, 32kB, 
+  * 64kB, 128kB, 256kB, 512kB, 1MB, 2MB, 4MB, 8MB, 16MB, 32MB, 64MB, 128MB, 
+  * 256MB, 512MB, 1GB and sets a maximum of 105,258,400 cached kB
+*/
 
 namespace cms::sycltools {
 
@@ -296,7 +327,7 @@ namespace cms::sycltools {
     }
 
     void* allocateBuffer(size_t bytes, sycl::queue const& queue) {
-      if (queue.get_device().is_host()) { // TODO is_host -> data member
+      if (queue.get_device().is_host()) {  // TODO is_host -> data member
         return sycl::malloc_host(bytes, queue);
       } else {
         return sycl::malloc_device(bytes, queue);
