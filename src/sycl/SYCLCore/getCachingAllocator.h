@@ -30,8 +30,8 @@ namespace cms::sycltools {
                                     config::maxBin,
                                     config::maxCachedBytes,
                                     config::maxCachedFraction,
-                                    true,    // reuseSameQueueAllocations
-                                    false);  // debug
+                                    config::allocator_policy,  // reuseSameQueueAllocations
+                                    false);                    // debug
       }
 
       // use a custom deleter to destroy all objects and deallocate the memory
