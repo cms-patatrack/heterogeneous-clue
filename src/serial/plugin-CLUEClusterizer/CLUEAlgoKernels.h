@@ -86,7 +86,7 @@ void KernelComputeDistanceToHigher(std::array<LayerTilesSerial, NLAYERS> &d_hist
           // query N'_{dm}(i)
           bool foundHigher = (points.rho[j] > rho_i);
           // in the rare case where rho is the same, use detid
-          foundHigher = foundHigher || ((points.rho[j] == rho_i) && (j > i));
+          // foundHigher = foundHigher || ((points.rho[j] == rho_i) && (j > i));
           float dist_ij = distance(points, i, j);
           if (foundHigher && dist_ij <= dm) {  // definition of N'_{dm}(i)
             // find the nearest point within N'_{dm}(i)
