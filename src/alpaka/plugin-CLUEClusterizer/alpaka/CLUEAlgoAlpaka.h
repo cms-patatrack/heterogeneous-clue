@@ -33,7 +33,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     PointsCloudAlpaka d_points;
 
-    LayerTilesAlpaka<Acc1D> *hist_;
+    LayerTilesAlpaka *hist_;
     cms::alpakatools::VecArray<int, maxNSeeds> *seeds_;
     cms::alpakatools::VecArray<int, maxNFollowers> *followers_;
 
@@ -43,7 +43,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     float rhoc_;
     float outlierDeltaFactor_;
 
-    std::optional<cms::alpakatools::device_buffer<Device, LayerTilesAlpaka<Acc1D>[]>> d_hist;
+    std::optional<cms::alpakatools::device_buffer<Device, LayerTilesAlpaka[]>> d_hist;
     std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<int, maxNSeeds>>> d_seeds;
     std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<int, maxNFollowers>[]>> d_followers;
 

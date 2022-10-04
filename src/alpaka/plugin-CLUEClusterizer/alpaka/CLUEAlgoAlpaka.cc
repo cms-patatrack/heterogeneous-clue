@@ -8,7 +8,7 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   void CLUEAlgoAlpaka::init_device() {
-    d_hist = cms::alpakatools::make_device_buffer<LayerTilesAlpaka<Acc1D>[]>(queue_, NLAYERS);
+    d_hist = cms::alpakatools::make_device_buffer<LayerTilesAlpaka[]>(queue_, NLAYERS);
     d_seeds = cms::alpakatools::make_device_buffer<cms::alpakatools::VecArray<int, maxNSeeds>>(queue_);
     d_followers =
         cms::alpakatools::make_device_buffer<cms::alpakatools::VecArray<int, maxNFollowers>[]>(queue_, reserve);

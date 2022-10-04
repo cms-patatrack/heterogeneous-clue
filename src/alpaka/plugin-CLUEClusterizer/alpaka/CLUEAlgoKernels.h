@@ -11,19 +11,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   struct kernel_compute_histogram {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   uint32_t const &numberOfPoints) const {
       // push index of points into tiles
-      cms::alpakatools::for_each_element_in_grid(
-          acc, numberOfPoints, [&](uint32_t i) { d_hist[d_points->layer[i]].fill(d_points->x[i], d_points->y[i], i); });
+      cms::alpakatools::for_each_element_in_grid(acc, numberOfPoints, [&](uint32_t i) {
+        d_hist[d_points->layer[i]].fill(acc, d_points->x[i], d_points->y[i], i);
+      });
     }
   };
 
   struct kernel_calculate_density {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   float dc,
                                   uint32_t const &numberOfPoints) const {
@@ -61,7 +62,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   struct kernel_calculate_distanceToHigher {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   float outlierDeltaFactor,
                                   float dc,
