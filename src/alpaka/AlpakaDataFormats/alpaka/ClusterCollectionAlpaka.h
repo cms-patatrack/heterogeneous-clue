@@ -12,7 +12,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class ClusterCollectionAlpaka {
   public:
     ClusterCollectionAlpaka() = delete;
-    explicit ClusterCollectionAlpaka(Queue &stream)
+    explicit ClusterCollectionAlpaka(Queue &stream, uint32_t numberOfPoints)
         //input variables
         : x{cms::alpakatools::make_device_buffer<float[]>(stream, reserve)},
           y{cms::alpakatools::make_device_buffer<float[]>(stream, reserve)},
@@ -30,6 +30,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           nearestHigher{cms::alpakatools::make_device_buffer<std::pair<int, int>[]>(stream, reserve)},
           isSeed{cms::alpakatools::make_device_buffer<int[]>(stream, reserve)},
           tracksterIndex{cms::alpakatools::make_device_buffer<int[]>(stream, reserve)},
+          n{numberOfPoints},
           view_d{cms::alpakatools::make_device_buffer<ClusterCollectionAlpakaView>(stream)} {
       auto view_h = cms::alpakatools::make_host_buffer<ClusterCollectionAlpakaView>(stream);
       view_h->x = x.data();
@@ -47,6 +48,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       view_h->nearestHigher = nearestHigher.data();
       view_h->isSeed = isSeed.data();
       view_h->tracksterIndex = tracksterIndex.data();
+      view_h->n = numberOfPoints;
 
       alpaka::memcpy(stream, view_d, view_h);
       alpaka::wait(stream);
@@ -73,6 +75,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     cms::alpakatools::device_buffer<Device, std::pair<int, int>[]> nearestHigher;
     cms::alpakatools::device_buffer<Device, int[]> isSeed;
     cms::alpakatools::device_buffer<Device, int[]> tracksterIndex;
+    uint32_t n;
 
     class ClusterCollectionAlpakaView {
     public:
@@ -91,6 +94,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       std::pair<int, int> *nearestHigher;
       int *isSeed;
       int *tracksterIndex;
+      uint32_t n;
     };
 
     ClusterCollectionAlpakaView *view() { return view_d.data(); }

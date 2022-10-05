@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
   if ((configFile.empty()) and (dim == 2)) {
     configFile = std::filesystem::path(args[0]).parent_path() / "config" / "hgcal_config.csv";
   }
-  if (not std::filesystem::exists(configFile)) {
+  if ((not std::filesystem::exists(configFile)) and (dim == 2)) {
     std::cout << "Config file '" << configFile << "' does not exist" << std::endl;
     return EXIT_FAILURE;
   }
@@ -299,7 +299,7 @@ int main(int argc, char** argv) {
         std::string prefix = "alpaka_" + name(backend) + "::";
         // "portable" EDModules
         std::vector<std::string> edmodules;
-        edmodules.emplace_back(prefix + "CLUESerialTracksterizer");
+        edmodules.emplace_back(prefix + "CLUEAlpakaTracksterizer");
         if (validation) {
           std::cout << "Validation not available for CLUE 3D" << std::endl;
         }

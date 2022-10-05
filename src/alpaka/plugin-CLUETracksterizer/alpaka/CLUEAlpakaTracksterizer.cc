@@ -36,8 +36,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto const& pc = event.get(clusterCollectionToken_);
     cms::alpakatools::ScopedContextProduce<Queue> ctx(event.streamID());
     auto stream = ctx.stream();
-    // stream to be passed to makeTracksters?
-    CLUE3DAlgoAlpaka algo_(stream);
+    CLUE3DAlgoAlpaka algo_(stream, pc.x.size());
     // algo_->makeTracksters(pc);
     algo_.makeTracksters(pc);
 

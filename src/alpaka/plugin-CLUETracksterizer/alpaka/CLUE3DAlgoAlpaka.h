@@ -13,7 +13,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     // constructor
     CLUE3DAlgoAlpaka() = delete;
-    explicit CLUE3DAlgoAlpaka(Queue stream) : d_clusters{stream}, queue_{std::move(stream)} { init_device(); }
+    explicit CLUE3DAlgoAlpaka(Queue stream, uint32_t const &numberOfPoints)
+        : d_clusters{stream, numberOfPoints}, queue_{std::move(stream)} {
+      init_device();
+    }
 
     ~CLUE3DAlgoAlpaka() = default;
 
@@ -40,7 +43,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     std::optional<cms::alpakatools::device_buffer<Device, TICLLayerTilesAlpaka[]>> d_hist;
     std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<int, ticl::maxNSeeds>>> d_seeds;
-    std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers>[]>>
+    std::optional<
+        cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers>[]>>
         d_followers;
 
     void init_device();
