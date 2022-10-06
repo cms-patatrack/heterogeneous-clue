@@ -147,7 +147,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         }
         float maxDelta = std::numeric_limits<float>::max();
         float i_delta = maxDelta;
-        std::pair<int, int> i_nearestHigher(-1, -1);
+        int i_nearestHigher = -1;
         std::pair<float, int> nearest_distances(maxDelta, std::numeric_limits<int>::max());
         for (int currentLayer = minLayer; currentLayer <= maxLayer; currentLayer++) {
           if (!nearestHigherOnSameLayer && (layerId == currentLayer))
@@ -186,9 +186,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 if (foundHigher && dist <= i_delta) {
                   // update i_delta
                   i_delta = dist;
-                  nearest_distances = std::make_pair(sqrt(dist_transverse), dist_layers);
+                  nearest_distances.first = sqrt(dist_transverse);
+                  nearest_distances.second = dist_layers;
                   // update i_nearestHigher
-                  i_nearestHigher = std::make_pair(currentLayer, otherClusterIdx);
+                  i_nearestHigher = otherClusterIdx;
                 }
               }  // End of loop on clusters
             }    // End of loop on phi bins
@@ -198,13 +199,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         bool foundNearestInFiducialVolume = (i_delta != maxDelta);
 
         if (foundNearestInFiducialVolume) {
-          d_points->delta[clusterIdx] = nearest_distances;
+          d_points->delta[clusterIdx].first = nearest_distances.first;
+          d_points->delta[clusterIdx].second = nearest_distances.second;
           d_points->nearestHigher[clusterIdx] = i_nearestHigher;
         } else {
           // otherwise delta is guaranteed to be larger outlierDeltaFactor_*delta_c
           // we can safely maximize delta to be maxDelta
-          d_points->delta[clusterIdx] = std::make_pair(maxDelta, std::numeric_limits<int>::max());
-          d_points->nearestHigher[clusterIdx] = {-1, -1};
+          d_points->delta[clusterIdx].first = maxDelta;
+          d_points->delta[clusterIdx].second = std::numeric_limits<int>::max();
+          d_points->nearestHigher[clusterIdx] = -1;
         }
       });
     }
@@ -214,7 +217,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
                                   cms::alpakatools::VecArray<int, ticl::maxNSeeds> *d_seeds,
-                                  cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers> *d_followers,
+                                  cms::alpakatools::VecArray<int, ticl::maxNFollowers> *d_followers,
                                   pointsView *d_points,
                                   uint32_t const &numberOfPoints,
                                   float criticalXYDistance = 1.8,  // cm
@@ -224,7 +227,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                                   float outlierMultiplier = 2.) const {
       auto critical_transverse_distance = criticalXYDistance;
       cms::alpakatools::for_each_element_in_grid(acc, numberOfPoints, [&](uint32_t clusterIdx) {
-        int layerId = d_points->layer[clusterIdx];
         // initialize tracksterIndex
         d_points->tracksterIndex[clusterIdx] = -1;
         bool isSeed = (d_points->delta[clusterIdx].first > critical_transverse_distance ||
@@ -244,9 +246,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           d_points->isSeed[clusterIdx] = 1;
         } else {
           if (!isOutlier) {
-            auto [lyrIdx, soaIdx] = d_points->nearestHigher[clusterIdx];
-            if (lyrIdx >= 0)
-              d_followers[soaIdx].push_back(acc, {layerId, clusterIdx});
+            auto soaIdx = d_points->nearestHigher[clusterIdx];
+            if (soaIdx >= 0)
+              d_followers[soaIdx].push_back(acc, clusterIdx);
           }
         }
       });
@@ -257,7 +259,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
                                   cms::alpakatools::VecArray<int, ticl::maxNSeeds> *d_seeds,
-                                  cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers> *d_followers,
+                                  cms::alpakatools::VecArray<int, ticl::maxNFollowers> *d_followers,
                                   pointsView *d_points,
                                   uint32_t const &numberOfPoints) const {
       const auto &seeds = d_seeds[0];
@@ -286,15 +288,32 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           localStackSize--;
 
           // loop over followers of last element of localStack
-          for (std::pair<int, int> j : d_followers[idxEndOfLocalStack]) {
+          for (int j : d_followers[idxEndOfLocalStack]) {
             // pass id to follower
-            d_points->tracksterIndex[j.second] = temp_tracksterIndex;
+            d_points->tracksterIndex[j] = temp_tracksterIndex;
             // push_back follower to localStack
             assert((localStackSize < ticl::localStackSizePerSeed));
-            localStack[localStackSize] = j.second;
+            localStack[localStackSize] = j;
             localStackSize++;
           }
         }
+      });
+    }
+  };
+
+  struct KernelPrintNTracksters {
+    template <typename TAcc>
+    ALPAKA_FN_ACC void operator()(const TAcc &acc, pointsView *d_points, uint32_t const &numberOfPoints) const {
+      // push index of points into tiles
+      cms::alpakatools::for_each_element_in_grid(acc, numberOfPoints, [&](uint32_t i) {
+        auto numberOfTracksters = d_points->tracksterIndex[i];
+        for (uint32_t j = 0; j < numberOfPoints; j++) {
+          if (d_points->tracksterIndex[j] > numberOfTracksters)
+            numberOfTracksters = d_points->tracksterIndex[j];
+        }
+        numberOfTracksters++;
+        printf("Number of Tracksters: %d", numberOfTracksters);
+        printf("\n");
       });
     }
   };

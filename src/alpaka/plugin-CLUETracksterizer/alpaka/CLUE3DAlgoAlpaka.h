@@ -36,15 +36,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     TICLLayerTilesAlpaka *hist_;
     cms::alpakatools::VecArray<int, ticl::maxNSeeds> *seeds_;
-    cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers> *followers_;
+    cms::alpakatools::VecArray<int, ticl::maxNFollowers> *followers_;
 
   private:
     Queue queue_;
 
     std::optional<cms::alpakatools::device_buffer<Device, TICLLayerTilesAlpaka[]>> d_hist;
     std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<int, ticl::maxNSeeds>>> d_seeds;
-    std::optional<
-        cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers>[]>>
+    std::optional<cms::alpakatools::device_buffer<Device, cms::alpakatools::VecArray<int, ticl::maxNFollowers>[]>>
         d_followers;
 
     void init_device();

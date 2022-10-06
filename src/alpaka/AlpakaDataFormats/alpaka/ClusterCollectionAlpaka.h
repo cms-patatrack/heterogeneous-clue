@@ -7,7 +7,7 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  constexpr unsigned int reserve = 1000000;
+  constexpr unsigned int reserve = 100000;
 
   class ClusterCollectionAlpaka {
   public:
@@ -27,7 +27,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           //result variables
           rho{cms::alpakatools::make_device_buffer<float[]>(stream, reserve)},
           delta{cms::alpakatools::make_device_buffer<std::pair<float, int>[]>(stream, reserve)},
-          nearestHigher{cms::alpakatools::make_device_buffer<std::pair<int, int>[]>(stream, reserve)},
+          nearestHigher{cms::alpakatools::make_device_buffer<int[]>(stream, reserve)},
           isSeed{cms::alpakatools::make_device_buffer<int[]>(stream, reserve)},
           tracksterIndex{cms::alpakatools::make_device_buffer<int[]>(stream, reserve)},
           n{numberOfPoints},
@@ -72,7 +72,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     cms::alpakatools::device_buffer<Device, int[]> isSilicon;
     cms::alpakatools::device_buffer<Device, float[]> rho;
     cms::alpakatools::device_buffer<Device, std::pair<float, int>[]> delta;
-    cms::alpakatools::device_buffer<Device, std::pair<int, int>[]> nearestHigher;
+    cms::alpakatools::device_buffer<Device, int[]> nearestHigher;
     cms::alpakatools::device_buffer<Device, int[]> isSeed;
     cms::alpakatools::device_buffer<Device, int[]> tracksterIndex;
     uint32_t n;
@@ -91,7 +91,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       int *isSilicon;
       float *rho;
       std::pair<float, int> *delta;
-      std::pair<int, int> *nearestHigher;
+      int *nearestHigher;
       int *isSeed;
       int *tracksterIndex;
       uint32_t n;

@@ -70,12 +70,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     Parameters par;
     par = eventSetup.get<Parameters>();
     if (par.produceOutput) {
-      auto temp_outDir = eventSetup.get<std::filesystem::path>();
-      std::string input_file_name = temp_outDir.filename();
-      std::string output_file_name = create_outputfileName(input_file_name, par.dc, par.rhoc, par.outlierDeltaFactor);
-      std::filesystem::path outDir = temp_outDir.parent_path() / output_file_name;
+      auto const& outDir = eventSetup.get<std::filesystem::path>();
+      std::string output_file_name = create_outputfileName(event.eventID(), par.dc, par.rhoc, par.outlierDeltaFactor);
+      std::filesystem::path outFile = outDir / output_file_name;
 
-      std::ofstream clueOut(outDir);
+      std::ofstream clueOut(outFile);
 
       clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
       for (unsigned int i = 0; i < device_clusters.n; i++) {
@@ -87,7 +86,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       clueOut.close();
 
-      std::cout << "Ouput was saved in " << outDir << std::endl;
+      std::cout << "Ouput was saved in " << outFile << std::endl;
     }
 
     ctx.emplace(event, resultsToken_, std::move(results));

@@ -12,8 +12,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     d_hist = cms::alpakatools::make_device_buffer<TICLLayerTilesAlpaka[]>(queue_, ticl::TileConstants::nLayers);
     d_seeds = cms::alpakatools::make_device_buffer<cms::alpakatools::VecArray<int, ticl::maxNSeeds>>(queue_);
     d_followers =
-        cms::alpakatools::make_device_buffer<cms::alpakatools::VecArray<std::pair<int, int>, ticl::maxNFollowers>[]>(
-            queue_, reserve);
+        cms::alpakatools::make_device_buffer<cms::alpakatools::VecArray<int, ticl::maxNFollowers>[]>(queue_, reserve);
 
     hist_ = (*d_hist).data();
     seeds_ = (*d_seeds).data();
@@ -68,6 +67,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     alpaka::enqueue(queue_,
                     alpaka::createTaskKernel<Acc1D>(
                         WorkDiv1D, KernelAssignClusters(), seeds_, followers_, d_clusters.view(), d_clusters.n));
+
+    alpaka::enqueue(queue_,
+                    alpaka::createTaskKernel<Acc1D>(
+                        WorkDiv1D, KernelAssignClusters(), seeds_, followers_, d_clusters.view(), d_clusters.n));
+
+    // To validate the number of Tracksters
+    // auto WorkDivPrint = cms::alpakatools::make_workdiv<Acc1D>(1, 1);
+    // alpaka::enqueue(
+    //     queue_,
+    //     alpaka::createTaskKernel<Acc1D>(WorkDivPrint, KernelPrintNTracksters(), d_clusters.view(), d_clusters.n));
 
     alpaka::wait(queue_);
 
