@@ -16,7 +16,7 @@ namespace ticl {
     static constexpr int tileDepth = 40;
   };
 
-  constexpr int maxNSeeds = 8192;
+  constexpr int maxNSeeds = 10000;
   constexpr int maxNFollowers = 128;
   constexpr int localStackSizePerSeed = 128;
 
