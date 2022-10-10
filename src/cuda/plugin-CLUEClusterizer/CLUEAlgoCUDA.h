@@ -11,12 +11,8 @@ class CLUEAlgoCUDA {
 public:
   // constructor
   CLUEAlgoCUDA() = delete;
-  explicit CLUEAlgoCUDA(float const &dc,
-                        float const &rhoc,
-                        float const &outlierDeltaFactor,
-                        cudaStream_t stream,
-                        uint32_t const &numberOfPoints)
-      : d_points{stream, numberOfPoints}, dc_{dc}, rhoc_{rhoc}, outlierDeltaFactor_{outlierDeltaFactor}, stream_{stream} {
+  explicit CLUEAlgoCUDA(float const &dc, float const &rhoc, float const &outlierDeltaFactor, cudaStream_t stream)
+      : d_points{stream}, dc_{dc}, rhoc_{rhoc}, outlierDeltaFactor_{outlierDeltaFactor}, stream_{stream} {
     init_device();
   }
 

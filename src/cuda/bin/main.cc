@@ -29,7 +29,7 @@ namespace {
               << " --numberOfStreams   Number of concurrent events (default 0 = numberOfThreads)\n"
               << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
               << " --inputFile         Path to the input file to cluster with CLUE (default is set to "
-                 "data/input/raw.bin)'\n"
+                 "data/input/raw2D.bin)'\n"
               << " --configFile        Path to the config file with the parameters (dc, rhoc, outlierDeltaFactor, "
                  "produceOutput) to run CLUE (implies --transfer, default 'config/hgcal_config.csv' in the directory "
                  "of the executable)\n"
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     numberOfStreams = numberOfThreads;
   }
   if (inputFile.empty()) {
-    inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/raw.bin";
+    inputFile = std::filesystem::path(args[0]).parent_path() / "data/input/raw2D.bin";
   }
   if (not std::filesystem::exists(inputFile)) {
     std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;

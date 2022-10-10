@@ -12,7 +12,7 @@ constexpr unsigned int reserve = 1000000;
 class PointsCloudCUDA {
 public:
   PointsCloudCUDA() = delete;
-  explicit PointsCloudCUDA(cudaStream_t stream, uint32_t numberOfPoints)
+  explicit PointsCloudCUDA(cudaStream_t stream)
       // input variables
       : x{cms::cuda::make_device_unique<float[]>(reserve, stream)},
         y{cms::cuda::make_device_unique<float[]>(reserve, stream)},
@@ -24,7 +24,6 @@ public:
         nearestHigher{cms::cuda::make_device_unique<int[]>(reserve, stream)},
         clusterIndex{cms::cuda::make_device_unique<int[]>(reserve, stream)},
         isSeed{cms::cuda::make_device_unique<int[]>(reserve, stream)},
-        n{numberOfPoints},
         view_d{cms::cuda::make_device_unique<PointsCloudCUDAView>(stream)} {
     auto view_h = cms::cuda::make_host_unique<PointsCloudCUDAView>(stream);
     view_h->x = x.get();
@@ -36,7 +35,6 @@ public:
     view_h->nearestHigher = nearestHigher.get();
     view_h->clusterIndex = clusterIndex.get();
     view_h->isSeed = isSeed.get();
-    view_h->n = numberOfPoints;
 
     cudaMemcpyAsync(view_d.get(), view_h.get(), sizeof(PointsCloudCUDAView), cudaMemcpyHostToDevice, stream);
     cudaStreamSynchronize(stream);
@@ -57,7 +55,6 @@ public:
   cms::cuda::device::unique_ptr<int[]> nearestHigher;
   cms::cuda::device::unique_ptr<int[]> clusterIndex;
   cms::cuda::device::unique_ptr<int[]> isSeed;
-  uint32_t n;
 
   class PointsCloudCUDAView {
   public:
@@ -70,7 +67,6 @@ public:
     int *nearestHigher;
     int *clusterIndex;
     int *isSeed;
-    uint32_t n;
   };
 
   PointsCloudCUDAView *view() { return view_d.get(); }

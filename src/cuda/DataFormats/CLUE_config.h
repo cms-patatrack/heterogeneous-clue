@@ -9,7 +9,7 @@ struct Parameters {
   float dc = 20;
   float rhoc = 25;
   float outlierDeltaFactor = 2;
-  bool produceOutput = true;
+  bool produceOutput = false;
 };
 
 template <typename T>

@@ -20,21 +20,20 @@
 
 namespace {
   void print_help(std::string const& name) {
-    std::cout
-        << name
-        << ": [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--inputFile PATH] [--transfer] "
-           "[--validation] "
-           "[--empty]\n\n"
-        << "Options\n"
-        << " --numberOfThreads   Number of threads to use (default 1, use 0 to use all CPU cores)\n"
-        << " --numberOfStreams   Number of concurrent events (default 0 = numberOfThreads)\n"
-        << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
-        << " --inputFile         Path to the input file (default 'data/input/toyDetector_1k.csv' in the directory of "
-           "the executable)\n"
-        << " --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)\n"
-        << " --validation        Run (rudimentary) validation at the end (implies --transfer)\n"
-        << " --empty             Ignore all producers (for testing only)\n"
-        << std::endl;
+    std::cout << name
+              << ": [--numberOfThreads NT] [--numberOfStreams NS] [--maxEvents ME] [--inputFile PATH] [--transfer] "
+                 "[--validation] "
+                 "[--empty]\n\n"
+              << "Options\n"
+              << " --numberOfThreads   Number of threads to use (default 1, use 0 to use all CPU cores)\n"
+              << " --numberOfStreams   Number of concurrent events (default 0 = numberOfThreads)\n"
+              << " --maxEvents         Number of events to process (default -1 for all events in the input file)\n"
+              << " --inputFile         Path to the input file (default 'data/input/raw2D.bin' in the directory of "
+                 "the executable)\n"
+              << " --transfer          Transfer results from GPU to CPU (default is to leave them on GPU)\n"
+              << " --validation        Run (rudimentary) validation at the end (implies --transfer)\n"
+              << " --empty             Ignore all producers (for testing only)\n"
+              << std::endl;
   }
 }  // namespace
 
@@ -89,7 +88,7 @@ int main(int argc, char** argv) {
     numberOfStreams = numberOfThreads;
   }
   if (inputFile.empty()) {
-    inputFile = std::filesystem::path(args[0]).parent_path() / "data" / "input" / "toyDetector_1k.bin";
+    inputFile = std::filesystem::path(args[0]).parent_path() / "data" / "input" / "raw2D.bin";
   }
   if (not std::filesystem::exists(inputFile)) {
     std::cout << "Input file '" << inputFile << "' does not exist" << std::endl;

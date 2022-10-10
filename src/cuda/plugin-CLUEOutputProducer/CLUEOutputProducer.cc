@@ -42,27 +42,27 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
   auto stream = ctx.stream();
 
   // cms::cuda::host::unique_ptr<PointsCloud> m_soa;
-  results.outResize(device_clusters.n);
+  results.outResize();
   cudaCheck(cudaMemcpyAsync(
-      results.rho.data(), device_clusters.rho.get(), sizeof(float) * device_clusters.n, cudaMemcpyDeviceToHost, stream));
+      results.rho.data(), device_clusters.rho.get(), sizeof(float) * results.x.size(), cudaMemcpyDeviceToHost, stream));
   cudaCheck(cudaMemcpyAsync(results.delta.data(),
                             device_clusters.delta.get(),
-                            sizeof(float) * device_clusters.n,
+                            sizeof(float) * results.x.size(),
                             cudaMemcpyDeviceToHost,
                             stream));
   cudaCheck(cudaMemcpyAsync(results.nearestHigher.data(),
                             device_clusters.nearestHigher.get(),
-                            sizeof(float) * device_clusters.n,
+                            sizeof(float) * results.x.size(),
                             cudaMemcpyDeviceToHost,
                             stream));
   cudaCheck(cudaMemcpyAsync(results.isSeed.data(),
                             device_clusters.isSeed.get(),
-                            sizeof(int) * device_clusters.n,
+                            sizeof(int) * results.x.size(),
                             cudaMemcpyDeviceToHost,
                             stream));
   cudaCheck(cudaMemcpyAsync(results.clusterIndex.data(),
                             device_clusters.clusterIndex.get(),
-                            sizeof(int) * device_clusters.n,
+                            sizeof(int) * results.x.size(),
                             cudaMemcpyDeviceToHost,
                             stream));
   cudaStreamSynchronize(stream);
@@ -79,7 +79,7 @@ void CLUEOutputProducer::produce(edm::Event& event, edm::EventSetup const& event
     std::ofstream clueOut(outFile);
 
     clueOut << "index,x,y,layer,weight,rho,delta,nh,isSeed,clusterId\n";
-    for (unsigned int i = 0; i < device_clusters.n; i++) {
+    for (unsigned int i = 0; i < results.x.size(); i++) {
       clueOut << i << "," << results.x[i] << "," << results.y[i] << "," << results.layer[i] << "," << results.weight[i]
               << "," << results.rho[i] << "," << (results.delta[i] > 999 ? 999 : results.delta[i]) << ","
               << results.nearestHigher[i] << "," << results.isSeed[i] << "," << results.clusterIndex[i] << "\n";

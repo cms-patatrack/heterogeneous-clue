@@ -84,7 +84,7 @@ __global__ void kernel_calculate_distanceToHigher(
           float dist_ij = std::sqrt((xi - xj) * (xi - xj) + (yi - yj) * (yi - yj));
           bool foundHigher = (d_points->rho[j] > rhoi);
           // in the rare case where rho is the same, use detid
-          foundHigher = foundHigher || ((d_points->rho[j] == rhoi) && (j > i));
+          // foundHigher = foundHigher || ((d_points->rho[j] == rhoi) && (j > i));
           if (foundHigher && dist_ij <= dm) {  // definition of N'_{dm}(i)
             // find the nearest point within N'_{dm}(i)
             if (dist_ij < deltai) {
@@ -135,8 +135,7 @@ __global__ void kernel_find_clusters(cms::cuda::VecArray<int, maxNSeeds>* d_seed
 
 __global__ void kernel_assign_clusters(const cms::cuda::VecArray<int, maxNSeeds>* d_seeds,
                                        const cms::cuda::VecArray<int, maxNFollowers>* d_followers,
-                                       pointsView* d_points,
-                                       int numberOfPoints) {
+                                       pointsView* d_points) {
   int idxCls = blockIdx.x * blockDim.x + threadIdx.x;
   const auto& seeds = d_seeds[0];
   const auto nSeeds = seeds.size();
