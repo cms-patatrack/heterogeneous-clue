@@ -179,9 +179,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
                 // the original CLUE3D implementaiton is bsaed on the index of
                 // the LayerCclusters in the LayerClusterCollection. In this
                 // case, the index is based on the ordering of the SOA indices.
-                bool foundHigher =
-                    (d_points->rho[otherClusterIdx] > d_points->rho[clusterIdx]) ||
-                    (d_points->rho[otherClusterIdx] == d_points->rho[clusterIdx] && otherClusterIdx > clusterIdx);
+                bool foundHigher = (d_points->rho[otherClusterIdx] > d_points->rho[clusterIdx]);  //||
+                // (d_points->rho[otherClusterIdx] == d_points->rho[clusterIdx] && otherClusterIdx > clusterIdx);
 
                 if (foundHigher && dist <= i_delta) {
                   // update i_delta
@@ -260,8 +259,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
                                   cms::alpakatools::VecArray<int, ticl::maxNSeeds> *d_seeds,
                                   cms::alpakatools::VecArray<int, ticl::maxNFollowers> *d_followers,
-                                  pointsView *d_points,
-                                  uint32_t const &numberOfPoints) const {
+                                  pointsView *d_points) const {
       const auto &seeds = d_seeds[0];
       const auto nSeeds = seeds.size();
       cms::alpakatools::for_each_element_in_grid(acc, nSeeds, [&](uint32_t idxCls) {
@@ -304,7 +302,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   struct KernelPrintNTracksters {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc, pointsView *d_points, uint32_t const &numberOfPoints) const {
-      // push index of points into tiles
       cms::alpakatools::for_each_element_in_grid(acc, numberOfPoints, [&](uint32_t i) {
         auto numberOfTracksters = d_points->tracksterIndex[i];
         for (uint32_t j = 0; j < numberOfPoints; j++) {
@@ -312,6 +309,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
             numberOfTracksters = d_points->tracksterIndex[j];
         }
         numberOfTracksters++;
+
         printf("Number of Tracksters: %d", numberOfTracksters);
         printf("\n");
       });

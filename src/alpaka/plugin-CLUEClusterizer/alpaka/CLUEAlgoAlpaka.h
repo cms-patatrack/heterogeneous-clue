@@ -14,16 +14,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     // constructor
     CLUEAlgoAlpaka() = delete;
-    explicit CLUEAlgoAlpaka(float const &dc,
-                            float const &rhoc,
-                            float const &outlierDeltaFactor,
-                            Queue stream,
-                            uint32_t const &numberOfPoints)
-        : d_points{stream, numberOfPoints},
-          queue_{std::move(stream)},
-          dc_{dc},
-          rhoc_{rhoc},
-          outlierDeltaFactor_{outlierDeltaFactor} {
+    explicit CLUEAlgoAlpaka(float const &dc, float const &rhoc, float const &outlierDeltaFactor, Queue stream)
+        : d_points{stream}, queue_{std::move(stream)}, dc_{dc}, rhoc_{rhoc}, outlierDeltaFactor_{outlierDeltaFactor} {
       init_device();
     }
 

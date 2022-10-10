@@ -13,22 +13,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     // constructor
     CLUE3DAlgoAlpaka() = delete;
-    explicit CLUE3DAlgoAlpaka(Queue stream, uint32_t const &numberOfPoints)
-        : d_clusters{stream, numberOfPoints}, queue_{std::move(stream)} {
-      init_device();
-    }
+    explicit CLUE3DAlgoAlpaka(Queue stream) : d_clusters{stream}, queue_{std::move(stream)} { init_device(); }
 
     ~CLUE3DAlgoAlpaka() = default;
-
-    // CLUE3DAlgoAlpaka() {
-    //   hist_ = new TICLLayerTiles;
-    //   histSoA_ = new TICLLayerTiles;
-    // }
-
-    // ~CLUE3DAlgoAlpaka() {
-    //   delete hist_;
-    //   delete histSoA_;
-    // };
 
     void makeTracksters(ClusterCollection const &host_pc);
 
@@ -47,7 +34,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         d_followers;
 
     void init_device();
-    void setup(ClusterCollection const &pc);
+
+    void setup(ClusterCollection const &host_pc);
   };
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 

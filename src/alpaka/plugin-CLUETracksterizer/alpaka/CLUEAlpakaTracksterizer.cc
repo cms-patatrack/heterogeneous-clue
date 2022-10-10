@@ -22,25 +22,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     edm::EDGetTokenT<ClusterCollection> clusterCollectionToken_;
     edm::EDPutTokenT<cms::alpakatools::Product<Queue, ClusterCollectionAlpaka>> tracksterToken_;
-
-    // CLUE3DAlgoAlpaka* algo_;
   };
 
   CLUEAlpakaTracksterizer::CLUEAlpakaTracksterizer(edm::ProductRegistry& reg)
       : clusterCollectionToken_{reg.consumes<ClusterCollection>()},
         tracksterToken_{reg.produces<cms::alpakatools::Product<Queue, ClusterCollectionAlpaka>>()} {}
-  // {    algo_ = new CLUE3DAlgoAlpaka;
-  //   }
 
   void CLUEAlpakaTracksterizer::produce(edm::Event& event, const edm::EventSetup& eventSetup) {
     auto const& pc = event.get(clusterCollectionToken_);
     cms::alpakatools::ScopedContextProduce<Queue> ctx(event.streamID());
     auto stream = ctx.stream();
-    CLUE3DAlgoAlpaka algo_(stream, pc.x.size());
-    // algo_->makeTracksters(pc);
+    CLUE3DAlgoAlpaka algo_(stream);
     algo_.makeTracksters(pc);
 
-    // ctx.emplace(event, tracksterToken_, std::move(algo_->d_clusters));
     ctx.emplace(event, tracksterToken_, std::move(algo_.d_clusters));
   }
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
