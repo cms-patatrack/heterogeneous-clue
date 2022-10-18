@@ -4,8 +4,6 @@
 #include "AlpakaDataFormats/LayerTilesAlpaka.h"
 #include "AlpakaDataFormats/alpaka/PointsCloudAlpaka.h"
 
-// #include <assert.h>
-
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   using pointsView = PointsCloudAlpaka::PointsCloudAlpakaView;
@@ -13,19 +11,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   struct KernelComputeHistogram {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   uint32_t const &numberOfPoints) const {
       // push index of points into tiles
-      cms::alpakatools::for_each_element_in_grid(
-          acc, numberOfPoints, [&](uint32_t i) { d_hist[d_points->layer[i]].fill(d_points->x[i], d_points->y[i], i); });
+      cms::alpakatools::for_each_element_in_grid(acc, numberOfPoints, [&](uint32_t i) {
+        d_hist[d_points->layer[i]].fill(acc, d_points->x[i], d_points->y[i], i);
+      });
     }
   };
 
   struct KernelCalculateDensity {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   float dc,
                                   uint32_t const &numberOfPoints) const {
@@ -63,7 +62,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   struct KernelComputeDistanceToHigher {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc &acc,
-                                  LayerTilesAlpaka<Acc1D> *d_hist,
+                                  LayerTilesAlpaka *d_hist,
                                   pointsView *d_points,
                                   float outlierDeltaFactor,
                                   float dc,
@@ -94,7 +93,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
               float dist_ij = std::sqrt((xi - xj) * (xi - xj) + (yi - yj) * (yi - yj));
               bool foundHigher = (d_points->rho[j] > rhoi);
               // in the rare case where rho is the same, use detid
-              foundHigher = foundHigher || ((d_points->rho[j] == rhoi) && (j > i));
+              // foundHigher = foundHigher || ((d_points->rho[j] == rhoi) && (j > i));
               if (foundHigher && dist_ij <= dm) {
                 // definitio of N'_{dm}(i)
                 // find the nearest point within N'_{dm}(i)
