@@ -15,10 +15,10 @@ CLUEAlgoSYCL::CLUEAlgoSYCL(float const &dc,
       rhoc_{rhoc},
       outlierDeltaFactor_{outlierDeltaFactor},
       queue_{stream},
-      d_hist{cms::sycltools::make_unique_uninitialized<LayerTilesSYCL[]>(NLAYERS, *queue_)},
-      d_seeds{cms::sycltools::make_unique_uninitialized<cms::sycltools::VecArray<int, maxNSeeds>>(*queue_)},
-      d_followers{cms::sycltools::make_unique_uninitialized<cms::sycltools::VecArray<int, maxNFollowers>[]>(reserve,
-                                                                                                            *queue_)} {}
+      d_hist{cms::sycltools::make_device_unique_uninitialized<LayerTilesSYCL[]>(NLAYERS, *queue_)},
+      d_seeds{cms::sycltools::make_device_unique_uninitialized<cms::sycltools::VecArray<int, maxNSeeds>>(*queue_)},
+      d_followers{cms::sycltools::make_device_unique_uninitialized<cms::sycltools::VecArray<int, maxNFollowers>[]>(
+          reserve, *queue_)} {}
 
 void CLUEAlgoSYCL::setup(PointsCloud const &host_pc) {
   // input variables
