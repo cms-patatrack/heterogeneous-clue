@@ -106,7 +106,8 @@ namespace cms::sycltools {
           maxBinBytes_(detail::power(binGrowth, maxBin)),
           maxCachedBytes_(cacheSize(maxCachedBytes, maxCachedFraction_)),
           reuseSameQueueAllocations_(reuseSameQueueAllocations),
-          debug_(debug) {
+          debug_(debug),
+          isHost_(device_.is_host()) {
       if (debug_) {
         std::ostringstream out;
         out << "SYCL CachingAllocator settings\n"
@@ -217,8 +218,9 @@ namespace cms::sycltools {
     const size_t minBinBytes_;        // bytes of the smallest bin
     const size_t maxBinBytes_;        // bytes of the bigger bin
     const size_t maxCachedBytes_;     // total storage for the allocator (0 means no limit);
-    const bool reuseSameQueueAllocations_;
-    const bool debug_;
+    const bool reuseSameQueueAllocations_;  // caching policy
+    const bool debug_;                      // prints debug information
+    const bool isHost_;                     // checks if it's a host caching allocator
 
     using CachedBlocks = std::multimap<unsigned int, BlockDescriptor>;
     using BusyBlocks = std::map<void*, BlockDescriptor>;
@@ -290,7 +292,8 @@ namespace cms::sycltools {
       // iterate through the range of cached blocks in the same bin
       const auto [begin, end] = cachedBlocks_.equal_range(block.bin);
       for (auto blockIterator = begin; blockIterator != end; ++blockIterator) {
-        if ((reuseSameQueueAllocations_ and (*block.queue == *(blockIterator->second.queue))) or
+        if (reuseSameQueueAllocations_ and
+            ((*block.queue).get_context() == (*(blockIterator->second.queue)).get_context()) and
             blockIterator->second.event.value().get_info<sycl::info::event::command_execution_status>() ==
                 sycl::info::event_command_status::complete) {
           auto queue = std::move(block.queue);
@@ -326,15 +329,15 @@ namespace cms::sycltools {
     }
 
     void* allocateBuffer(size_t bytes, sycl::queue const& queue) {
-      if (device_.is_host()) {  // TODO is_host -> data member
-        if(debug_){
+      if (isHost_) {
+        if (debug_) {
           std::ostringstream out;
           out << "\tMalloc_host of " << bytes << " bytes." << std::endl;
           std::cout << out.str() << std::endl;
         }
         return sycl::malloc_host(bytes, queue);
       } else {
-        if(debug_){
+        if (debug_) {
           std::ostringstream out;
           out << "\tMalloc_device of " << bytes << " bytes." << std::endl;
           std::cout << out.str() << std::endl;
