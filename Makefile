@@ -110,7 +110,7 @@ else
 ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
 ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
 SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
-TBB_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022/tbb/latest
+TBB_BASE := $(ONEAPI_BASE)/tbb/latest
 TBB_LIBDIR := $(TBB_BASE)/lib/intel64/gcc4.8
 USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
 export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
