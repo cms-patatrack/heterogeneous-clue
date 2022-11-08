@@ -96,6 +96,45 @@ export ROCM_LDFLAGS := -L$(ROCM_LIBDIR) -lamdhip64
 export ROCM_TEST_CXXFLAGS := -DGPU_DEBUG
 endif
 
+# SYCL 
+SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
+SYCL_VERSION  := 2022.2.0
+
+ifdef USE_SYCL_PATATRACK
+SYCL_BASE     := /data2/user/wredjeb/sycl_workspace/build
+USER_SYCLFLAGS := -fsycl-targets=nvptx64-nvidia-cuda -std=c++17
+export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
+export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+
+else
+ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
+ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
+SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
+TBB_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022/tbb/latest
+TBB_LIBDIR := $(TBB_BASE)/lib/intel64/gcc4.8
+USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
+export SYCL_CXXFLAGS := -fsycl -Wsycl-strict $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+endif
+
+# check if libraries are under lib or lib64
+ifdef SYCL_BASE
+ifneq ($(wildcard $(SYCL_BASE)/lib/libsycl.so),)
+SYCL_LIBDIR := $(SYCL_BASE)/lib
+else ifneq ($(wildcard $(SYCL_BASE)/lib64/libsycl.so),)
+SYCL_LIBDIR := $(SYCL_BASE)/lib64
+else
+SYCL_BASE :=
+endif
+endif
+# check oneTBB
+ifdef SYCL_BASE
+ifdef CUDA_BASE
+export SYCL_CUDA_PLUGIN := $(wildcard $(SYCL_LIBDIR)/libpi_cuda.so)
+export SYCL_CUDA_FLAGS  := --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version
+endif
+endif
+
 # Input data definitions
 DATA_BASE := $(BASE_DIR)/data
 export DATA_DEPS := $(DATA_BASE)/data_ok
@@ -109,8 +148,11 @@ export HWLOC_DEPS := $(HWLOC_BASE)
 HWLOC_CXXFLAGS := -isystem $(HWLOC_BASE)/include
 HWLOC_LDFLAGS := -L$(HWLOC_BASE)/lib -lhwloc
 
+ifndef TBB_BASE
 TBB_BASE := $(EXTERNAL_BASE)/tbb
 TBB_LIBDIR := $(TBB_BASE)/lib
+endif
+
 TBB_LIB := $(TBB_LIBDIR)/libtbb.so
 TBB_CMAKEFLAGS := -DCMAKE_INSTALL_PREFIX=$(TBB_BASE) \
                   -DCMAKE_INSTALL_LIBDIR=lib \
@@ -251,47 +293,6 @@ ifdef KOKKOS_HOST_PARALLEL
   endif
 endif
 export KOKKOS_DEPS := $(KOKKOS_LIB)
-
-SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
-SYCL_VERSION  := 2022.1.0
-
-ifdef USE_SYCL_PATATRACK
-ONEAPI_BASE := /data2/user/wredjeb/sycl_workspace
-SYCL_BASE     := $(ONEAPI_BASE)/build
-USER_SYCLFLAGS := -fsycl-targets=nvptx64-nvidia-cuda -std=c++17
-export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
-export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
-
-else
-ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
-ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
-SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
-DPCT_BASE     := $(ONEAPI_BASE)/dpcpp-ct/$(SYCL_VERSION)
-DPCT_CXXFLAGS := -Wsycl-strict -isystem $(DPCT_BASE)/include
-USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
-export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
-export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
-endif
-
-# check if libraries are under lib or lib64
-ifdef SYCL_BASE
-ifneq ($(wildcard $(SYCL_BASE)/lib/libsycl.so),)
-SYCL_LIBDIR := $(SYCL_BASE)/lib
-else ifneq ($(wildcard $(SYCL_BASE)/lib64/libsycl.so),)
-SYCL_LIBDIR := $(SYCL_BASE)/lib64
-else
-SYCL_BASE :=
-endif
-endif
-# USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
-ifdef SYCL_BASE
-# export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
-# export SYCL_CXXFLAGS := -fsycl $(DPCT_CXXFLAGS) $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
-ifdef CUDA_BASE
-export SYCL_CUDA_PLUGIN := $(wildcard $(SYCL_LIBDIR)/libpi_cuda.so)
-export SYCL_CUDA_FLAGS  := --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version
-endif
-endif
 
 # force the recreation of the environment file any time the Makefile is updated, before building any other target
 -include environment
@@ -514,6 +515,7 @@ $(EXTERNAL_BASE):
 # TBB
 external_tbb: $(TBB_LIB)
 
+ifndef ONEAPI_BASE
 # Let TBB Makefile to define its own CXXFLAGS
 $(TBB_LIB): $(HWLOC_BASE)
 $(TBB_LIB): CXXFLAGS:=
@@ -532,6 +534,7 @@ $(TBB_LIB):
 	$(eval undefine TBB_TMP)
 	$(eval undefine TBB_TMP_SRC)
 	$(eval undefine TBB_TMP_BUILD)
+endif
 
 # Boost
 .PHONY: external_boost
