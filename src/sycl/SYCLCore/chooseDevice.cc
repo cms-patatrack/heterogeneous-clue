@@ -51,6 +51,30 @@ namespace cms::sycltools {
     return devices;
   }
 
+  std::vector<sycl::platform> const& discoverPlatforms() {
+    static std::vector<sycl::platform> temp;
+    auto const& devices = enumerateDevices();
+
+    for (auto dev : devices) {
+      if (std::find(temp.begin(), temp.end(), dev.get_platform()) == temp.end()) {
+        temp.emplace_back(dev.get_platform());
+      }
+    }
+
+    return temp;
+  }
+
+  std::vector<sycl::platform> const& enumeratePlatforms(bool verbose) {
+    static const std::vector<sycl::platform> platforms = discoverPlatforms();
+
+    if (verbose) {
+      std::cerr << "Found " << platforms.size() << " SYCL Platforms:" << std::endl;
+      for (auto const& plt : platforms)
+        std::cerr << "  - " << plt.get_info<sycl::info::platform::name>() << std::endl;
+    }
+    return platforms;
+  }
+
   sycl::device chooseDevice(edm::StreamID id, bool debug) {
     auto const& devices = enumerateDevices();
     auto const& device = devices[id % devices.size()];
