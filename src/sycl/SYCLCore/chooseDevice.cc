@@ -6,8 +6,8 @@
 #include "chooseDevice.h"
 
 namespace cms::sycltools {
-  std::vector<sycl::device> const& discoverDevices() {
-    static std::vector<sycl::device> temp;
+  static std::vector<sycl::device> discoverDevices() {
+    std::vector<sycl::device> temp;
     std::vector<sycl::device> cpus = sycl::device::get_devices(sycl::info::device_type::cpu);
     std::vector<sycl::device> gpus = sycl::device::get_devices(sycl::info::device_type::gpu);
     for (auto it = cpus.begin(); it != cpus.end(); it++) {
@@ -39,7 +39,7 @@ namespace cms::sycltools {
   }
 
   std::vector<sycl::device> const& enumerateDevices(bool verbose) {
-    static const std::vector<sycl::device> devices = discoverDevices();
+    static std::vector<sycl::device> devices = discoverDevices();
 
     if (verbose) {
       std::cerr << "Found " << devices.size() << " SYCL devices:" << std::endl;
@@ -51,8 +51,8 @@ namespace cms::sycltools {
     return devices;
   }
 
-  std::vector<sycl::platform> const& discoverPlatforms() {
-    static std::vector<sycl::platform> temp;
+  static std::vector<sycl::platform> discoverPlatforms() {
+    std::vector<sycl::platform> temp;
     auto const& devices = enumerateDevices();
 
     for (auto dev : devices) {
@@ -65,7 +65,7 @@ namespace cms::sycltools {
   }
 
   std::vector<sycl::platform> const& enumeratePlatforms(bool verbose) {
-    static const std::vector<sycl::platform> platforms = discoverPlatforms();
+    static std::vector<sycl::platform> platforms = discoverPlatforms();
 
     if (verbose) {
       std::cerr << "Found " << platforms.size() << " SYCL Platforms:" << std::endl;
