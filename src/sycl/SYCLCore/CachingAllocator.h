@@ -138,8 +138,7 @@ namespace cms::sycltools {
                      double maxCachedFraction,
                      const bool reuseSameQueueAllocations,
                      const bool debug)
-        : device_(sycl::device::get_devices(sycl::info::device_type::host)[0]),
-          platform_(platform),
+        : platform_(platform),
           isHost_(isHost),
           binGrowth_(binGrowth),
           minBin_(minBin),
@@ -219,9 +218,10 @@ namespace cms::sycltools {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           if (isHost_) {
-            out << " on Platform " << platform_.get_info<sycl::info::platform::name>();
+            out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+          } else {
+            out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           }
           out << " returned " << block.bytes << " bytes at " << ptr << " .\n\t\t " << cachedBlocks_.size()
               << " available blocks cached (" << cachedBytes_.free << " bytes), " << liveBlocks_.size()
@@ -233,9 +233,10 @@ namespace cms::sycltools {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           if (isHost_) {
-            out << " on Platform " << platform_.get_info<sycl::info::platform::name>();
+            out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+          } else {
+            out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           }
           out << " freed " << block.bytes << " bytes at " << ptr << " .\n\t\t " << cachedBlocks_.size()
               << " available blocks cached (" << cachedBytes_.free << " bytes), " << liveBlocks_.size()
@@ -305,9 +306,10 @@ namespace cms::sycltools {
 
         if (debug_) {
           std::ostringstream out;
-          out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           if (isHost_) {
-            out << " on Platform " << platform_.get_info<sycl::info::platform::name>();
+            out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+          } else {
+            out << "\tDevice " << device_.get_info<sycl::info::device::name>();
           }
           out << " freed " << block.bytes << " bytes.\n\t\t  " << cachedBlocks_.size() << " available blocks cached ("
               << cachedBytes_.free << " bytes), " << liveBlocks_.size() << " live blocks (" << cachedBytes_.live
@@ -364,9 +366,10 @@ namespace cms::sycltools {
 
           if (debug_) {
             std::ostringstream out;
-            out << "\tDevice " << device_.get_info<sycl::info::device::name>();
             if (isHost_) {
-              out << " on Platform " << platform_.get_info<sycl::info::platform::name>();
+              out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+            } else {
+              out << "\tDevice " << device_.get_info<sycl::info::device::name>();
             }
             out << " reused cached block at " << block.d_ptr << " (" << block.bytes << " bytes)"
                 << " previously associated with device "
@@ -409,10 +412,13 @@ namespace cms::sycltools {
         // NOTE: TODO implement a method that frees only up to block.bytes bytes
         if (debug_) {
           std::ostringstream out;
-          out << "\tCaught synchronous SYCL exception:\n"
-              << e.what() << "\n"
-              << "\tDevice " << device_.get_info<sycl::info::device::name>() << " failed to allocate " << block.bytes
-              << " bytes,"
+          out << "\tCaught synchronous SYCL exception:\n" << e.what() << "\n";
+          if (isHost_) {
+            out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+          } else {
+            out << "\tDevice " << device_.get_info<sycl::info::device::name>();
+          }
+          out << " failed to allocate " << block.bytes << " bytes,"
               << " retrying after freeing cached allocations" << std::endl;
           std::cout << out.str() << std::endl;
         }
@@ -435,9 +441,10 @@ namespace cms::sycltools {
 
       if (debug_) {
         std::ostringstream out;
-        out << "\tDevice " << device_.get_info<sycl::info::device::name>();
         if (isHost_) {
-          out << " on Platform " << platform_.get_info<sycl::info::platform::name>();
+          out << " Host on Platform " << platform_.get_info<sycl::info::platform::name>();
+        } else {
+          out << "\tDevice " << device_.get_info<sycl::info::device::name>();
         }
         out << " allocated new block at " << block.d_ptr << " of " << block.bytes << " bytes" << std::endl;
         std::cout << out.str() << std::endl;
