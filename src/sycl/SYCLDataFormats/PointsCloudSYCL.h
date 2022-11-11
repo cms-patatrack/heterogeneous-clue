@@ -1,8 +1,7 @@
 #ifndef POINTS_CLOUD_SYCL_H
 #define POINTS_CLOUD_SYCL_H
 
-#include <memory>
-
+#include "SYCLCore/host_unique_ptr.h"
 #include "SYCLCore/device_unique_ptr.h"
 
 constexpr unsigned int reserve = 1000000;
@@ -21,7 +20,7 @@ public:
         clusterIndex{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
         isSeed{cms::sycltools::make_device_unique<int[]>(reserve, stream)},
         n{numberOfPoints} {
-    auto view = std::make_unique<PointsCloudSYCLView>();
+    auto view = cms::sycltools::make_host_unique<PointsCloudSYCLView>(stream);
     view->x = x.get();
     view->y = y.get();
     view->layer = layer.get();
