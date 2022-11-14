@@ -7,7 +7,7 @@
 #include <cstdint>
 // SYCL include
 #include <CL/sycl.hpp>
-#include "SYCLDataFormats/SYCLVecArray.h"
+#include "SYCLCore/VecArray.h"
 #include "DataFormats/LayerTilesConstants.h"
 
 class LayerTilesSYCL {

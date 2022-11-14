@@ -8,7 +8,7 @@
 
 #include "DataFormats/Common.h"
 #include "DataFormats/Math/normalizedPhi.h"
-#include "SYCLDataFormats/SYCLVecArray.h"
+#include "SYCLCore/VecArray.h"
 
 template <typename T>
 class TICLLayerTileT {
