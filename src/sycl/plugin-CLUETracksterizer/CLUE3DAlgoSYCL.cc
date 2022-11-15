@@ -32,7 +32,7 @@ void CLUE3DAlgoSYCL::setup(ClusterCollection const &host_pc, ClusterCollectionSY
   // initialize result and internal variables
   stream.memset(d_seeds.get(), 0x00, sizeof(cms::sycltools::VecArray<int, ticl::maxNSeeds>));
 
-  const sycl::range<1> blockSize(256);
+  const sycl::range<1> blockSize(1024);
   sycl::range<1> gridSize(ceil(host_pc.x.size() / static_cast<float>(blockSize[0])));
   auto workDiv = sycl::nd_range<1>(gridSize * blockSize, blockSize);
 
@@ -59,7 +59,7 @@ void CLUE3DAlgoSYCL::makeTracksters(ClusterCollection const &host_pc,
 
   // calculate rho, delta and find seeds
   // 1 point per thread
-  const sycl::range<1> blockSize(256);
+  const sycl::range<1> blockSize(1024);
   const sycl::range<1> gridSize(ceil(host_pc.x.size() / static_cast<float>(blockSize[0])));
   const auto workDiv = sycl::nd_range<1>(gridSize * blockSize, blockSize);
 

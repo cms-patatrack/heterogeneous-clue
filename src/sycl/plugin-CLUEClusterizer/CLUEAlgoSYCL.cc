@@ -39,7 +39,7 @@ void CLUEAlgoSYCL::setup(PointsCloud const &host_pc) {
 
 void CLUEAlgoSYCL::makeClusters(PointsCloud const &host_pc) {
   setup(host_pc);
-  const int numThreadsPerBlock = 256;  // ThreadsPerBlock = work-group size
+  const int numThreadsPerBlock = 1024;  // ThreadsPerBlock = work-group size
   const sycl::range<1> blockSize(numThreadsPerBlock);
   const sycl::range<1> gridSize(ceil(d_points.n / static_cast<float>(blockSize[0])));
   PointsCloudSYCL::PointsCloudSYCLView *d_points_view = d_points.view();
