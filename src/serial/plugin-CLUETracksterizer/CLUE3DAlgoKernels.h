@@ -558,8 +558,9 @@ int KernelFindAndAssignClustersSoA(ClusterCollectionSerial &points,
       }
     }
   }
-
-  std::cout << "Number of Tracksters: " << nTracksters << std::endl;
+  if (algoVerbosity > 0) {
+    std::cout << "Number of Tracksters: " << nTracksters << std::endl;
+  }
   // Propagate cluster index
   while (!localStack.empty()) {
     auto [lyrIdx, soaIdx] = localStack.back();
