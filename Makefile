@@ -98,7 +98,6 @@ endif
 
 # SYCL 
 SYCL_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Wno-non-template-friend -Werror=format-contains-nul -Werror=return-local-addr -Werror=unused-but-set-variable
-SYCL_VERSION  := 2022.2.0
 
 ifdef USE_SYCL_PATATRACK
 SYCL_BASE     := /data2/user/wredjeb/sycl_workspace/build
@@ -106,16 +105,45 @@ USER_SYCLFLAGS := -fsycl-targets=nvptx64-nvidia-cuda -std=c++17
 export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
 export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
 
+else ifdef USE_SYCL_LLVM
+SYCL_BASE := /cvmfs/patatrack.cern.ch/externals/x86_64/rhel8/intel/sycl/build-2022-09
+
+USER_SYCLFLAGS := -std=c++17 -fsycl-targets=nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
+
+# -fsycl-targets=nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
+# -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx900 --rocm-path=$(ROCM_BASE) -Wno-linker-warnings
+
+# -fno-bundle-offload-arch              Specify that the offload bundler should not identify a bundle with specific arch.
+#                                       For example, the bundle for `nvptx64-nvidia-cuda-sm_80` uses the bundle tag
+#                                       `nvptx64-nvidia-cuda` when used. This allows .o files to contain .bc bundles
+#                                       that are unspecific to a particular arch version.
+#
+# --offload-arch=sm_60                  CUDA offloading device architecture (e.g. sm_35), or HIP offloading target ID in
+# --offload-arch=sm_70                  the form of a device architecture followed by target ID features delimited by a
+# --offload-arch=sm_75                  colon. Each target ID feature is a pre-defined string followed by a plus or minus
+#                                       sign (e.g. gfx908:xnack+:sramecc-).
+#                                       May be specified more than once.
+
+export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
+export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+
 else
 ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
+SYCL_VERSION  := 2022.2.0
+ifneq ($(wildcard $(ONEAPI_BASE)),)
 ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
 SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
 TBB_BASE := $(ONEAPI_BASE)/tbb/latest
 TBB_LIBDIR := $(TBB_BASE)/lib/intel64/gcc4.8
-USER_SYCLFLAGS := -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+USER_SYCLFLAGS := -fp-model=precise -fimf-arch-consistency=true -no-fma -Wsycl-strict -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
 export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
 export SYCL_CXXFLAGS := -fsycl -Wsycl-strict $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
 endif
+endif
+
+# to use a different toolchain
+#   - unset ONEAPI_ENV
+#   - set SYCL_BASE appropriately
 
 # check if libraries are under lib or lib64
 ifdef SYCL_BASE
