@@ -108,10 +108,12 @@ export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFL
 else ifdef USE_SYCL_LLVM
 SYCL_BASE := /cvmfs/patatrack.cern.ch/externals/x86_64/rhel8/intel/sycl/build-2022-09
 
-USER_SYCLFLAGS := -std=c++17 -fsycl-targets=nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
+USER_SYCLFLAGS := -std=c++17 
+# CPU + NVIDIA GPU
+SYCL_AOTFLAGS := -fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
 
-# -fsycl-targets=nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
-# -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx900 --rocm-path=$(ROCM_BASE) -Wno-linker-warnings
+# CPU + AMD GPU
+#SYCL_AOTFLAGS := -fsycl-targets=spir64_x86_64,amdgcn-amd-amdhsa -Xsycl-target-backend=amdgcn-amd-amdhsa "--offload-arch=gfx900" --rocm-path=$(ROCM_BASE) -Wno-linker-warnings
 
 # -fno-bundle-offload-arch              Specify that the offload bundler should not identify a bundle with specific arch.
 #                                       For example, the bundle for `nvptx64-nvidia-cuda-sm_80` uses the bundle tag
@@ -125,7 +127,9 @@ USER_SYCLFLAGS := -std=c++17 -fsycl-targets=nvptx64-nvidia-cuda -fno-bundle-offl
 #                                       May be specified more than once.
 
 export SYCL_CXX      := $(SYCL_BASE)/bin/clang++
-export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS) $(SYCL_AOTFLAGS)
+# makes OpenCL CPU visible
+export OCL_ICD_FILENAMES := /cvmfs/patatrack.cern.ch/externals/x86_64/rhel8/intel/sycl/runtime/intel/oclcpuexp_2022.14.8.0.04/x64/libintelocl.so
 
 else
 ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
@@ -442,6 +446,8 @@ endif
 # check if oneAPI environment file exists
 ifneq ($(wildcard $(ONEAPI_ENV)),)
 	@echo 'source $(ONEAPI_ENV)'                                            >> $@
+else
+	@echo 'export OCL_ICD_FILENAMES=$(OCL_ICD_FILENAMES)'                   >> $@
 endif
 
 define TARGET_template
