@@ -71,7 +71,7 @@ void CLUE3DAlgoSYCL::makeTracksters(ClusterCollection const &host_pc,
       kernel_compute_histogram(d_hist_kernel, d_clusters_kernel, numberOfPoints, item);
     });
   });
-  
+
   stream.submit([&](sycl::handler &cgh) {
     auto d_hist_kernel = d_hist.get();
     auto d_clusters_kernel = d_clusters.view();
@@ -112,14 +112,18 @@ void CLUE3DAlgoSYCL::makeTracksters(ClusterCollection const &host_pc,
     });
   });
 
+#ifdef TRACKSTER_DEBUG
   // print the number of Tracksters
-  //auto workDivPrint = sycl::nd_range<1>(1, 1);
-  //stream.submit([&](sycl::handler &cgh) {
-  //  auto d_clusters_kernel = d_clusters.view();
-  //  auto numberOfPoints = host_pc.x.size();
-  //  cgh.parallel_for(workDivPrint,
-  //                   [=](sycl::nd_item<1> item) { kernel_print_ntracksters(d_clusters_kernel, numberOfPoints, item); });
-  //});
+  auto workDivPrint = sycl::nd_range<1>(1, 1);
+  stream.submit([&](sycl::handler &cgh) {
+    auto d_clusters_kernel = d_clusters.view();
+    auto numberOfPoints = host_pc.x.size();
+    sycl::stream out(1024, 768, cgh);
+    cgh.parallel_for(workDivPrint, [=](sycl::nd_item<1> item) {
+      kernel_print_ntracksters(d_clusters_kernel, numberOfPoints, item, out);
+    });
+  });
+#endif
 
   stream.wait();
 }

@@ -7,7 +7,6 @@
 
 #include "SYCLDataFormats/TICLLayerTilesSYCL.h"
 #include "SYCLDataFormats/ClusterCollectionSYCL.h"
-#include "SYCLCore/printf.h"
 
 using pointsView = ClusterCollectionSYCL::ClusterCollectionSYCLView;
 
@@ -301,7 +300,7 @@ void kernel_assign_tracksters(const cms::sycltools::VecArray<int, ticl::maxNSeed
   }
 }
 
-void kernel_print_ntracksters(pointsView *d_points, uint32_t const &numberOfPoints, sycl::nd_item<1> item) {
+void kernel_print_ntracksters(pointsView *d_points, uint32_t const &numberOfPoints, sycl::nd_item<1> item, sycl::stream out) {
   auto i = item.get_group(0) * item.get_local_range().get(0) + item.get_local_id(0);
   if (i < numberOfPoints) {
     auto numberOfTracksters = d_points->tracksterIndex[i];
@@ -311,8 +310,7 @@ void kernel_print_ntracksters(pointsView *d_points, uint32_t const &numberOfPoin
     }
     numberOfTracksters++;
 
-    printf("Number of Tracksters: %d", numberOfTracksters);
-    printf("\n");
+    out << "Number of Tracksters: " << numberOfTracksters << sycl::endl;
   }
 }
 
