@@ -30,12 +30,21 @@ namespace alpaka {
   struct ApiCudaRt;
   struct ApiHipRt;
 
+  namespace detail {
+    struct IntelCpuSelector;
+    struct IntelGpuSelector;
+  }  // namespace detail
+
   // Platforms
   class PltfCpu;
   template <typename TApi>
   class PltfUniformCudaHipRt;
   using PltfCudaRt = PltfUniformCudaHipRt<ApiCudaRt>;
   using PltfHipRt = PltfUniformCudaHipRt<ApiHipRt>;
+  template <typename TSelector>
+  class PltfGenericSycl;
+  using PltfCpuSyclIntel = PltfGenericSycl<detail::IntelCpuSelector>;
+  using PltfGpuSyclIntel = PltfGenericSycl<detail::IntelGpuSelector>;
 
   // Devices
   class DevCpu;
@@ -43,6 +52,10 @@ namespace alpaka {
   class DevUniformCudaHipRt;
   using DevCudaRt = DevUniformCudaHipRt<ApiCudaRt>;
   using DevHipRt = DevUniformCudaHipRt<ApiHipRt>;
+  template <typename TPltf>
+  class DevGenericSycl;
+  using DevCpuSyclIntel = DevGenericSycl<PltfCpuSyclIntel>;
+  using DevGpuSyclIntel = DevGenericSycl<PltfGpuSyclIntel>;
 
   // Queues
   template <typename TDev>
@@ -62,6 +75,14 @@ namespace alpaka {
   using QueueHipRtBlocking = uniform_cuda_hip::detail::QueueUniformCudaHipRt<ApiHipRt, true>;
   using QueueHipRtNonBlocking = uniform_cuda_hip::detail::QueueUniformCudaHipRt<ApiHipRt, false>;
 
+  template <typename TDev, bool TBlocking>
+  class QueueGenericSyclBase;
+
+  using QueueCpuSyclIntelBlocking = QueueGenericSyclBase<DevCpuSyclIntel, true>;
+  using QueueCpuSyclIntelNonBlocking = QueueGenericSyclBase<DevCpuSyclIntel, false>;
+  using QueueGpuSyclIntelBlocking = QueueGenericSyclBase<DevGpuSyclIntel, true>;
+  using QueueGpuSyclIntelNonBlocking = QueueGenericSyclBase<DevGpuSyclIntel, false>;
+
   // Events
   template <typename TDev>
   class EventGenericThreads;
@@ -71,6 +92,11 @@ namespace alpaka {
   class EventUniformCudaHipRt;
   using EventCudaRt = EventUniformCudaHipRt<ApiCudaRt>;
   using EventHipRt = EventUniformCudaHipRt<ApiHipRt>;
+
+  template <typename TDev>
+  class EventGenericSycl;
+  using EventCpuSyclIntel = EventGenericSycl<DevCpuSyclIntel>;
+  using EventGpuSyclIntel = EventGenericSycl<DevGpuSyclIntel>;
 
   // Accelerators
   template <typename TApi, typename TDim, typename TIdx>
@@ -90,6 +116,12 @@ namespace alpaka {
 
   template <typename TDim, typename TIdx>
   class AccCpuOmp2Blocks;
+
+  template <typename TDim, typename TIdx>
+  class AccCpuSyclIntel;
+
+  template <typename TDim, typename TIdx>
+  class AccGpuSyclIntel;
 
 }  // namespace alpaka
 

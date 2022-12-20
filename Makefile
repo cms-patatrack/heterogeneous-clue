@@ -139,11 +139,13 @@ ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
 SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
 TBB_BASE := $(ONEAPI_BASE)/tbb/latest
 TBB_LIBDIR := $(TBB_BASE)/lib/intel64/gcc4.8
-USER_SYCLFLAGS := -fp-model=precise -fimf-arch-consistency=true -no-fma -Wsycl-strict -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+USER_SYCLFLAGS := -fp-model=precise -fimf-arch-consistency=true -no-fma -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
 export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
 export SYCL_CXXFLAGS := -fsycl -Wsycl-strict $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
 endif
 endif
+
+export SYCL_BASE
 
 # to use a different toolchain
 #   - unset ONEAPI_ENV
@@ -619,8 +621,7 @@ $(HWLOC_BASE):
 external_alpaka: $(ALPAKA_BASE)
 
 $(ALPAKA_BASE):
-	git clone git@github.com:alpaka-group/alpaka.git -b develop $@
-	cd $@ && git checkout b518e8c943a816eba06c3e12c0a7e1b58c8faedc
+	git clone https://github.com/Parsifal-2045/alpaka.git -b develop $@
 
 # Kokkos
 external_kokkos: $(KOKKOS_LIB)
