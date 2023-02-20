@@ -132,16 +132,18 @@ export SYCL_CXXFLAGS := -fsycl $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFL
 export OCL_ICD_FILENAMES := /cvmfs/patatrack.cern.ch/externals/x86_64/rhel8/intel/sycl/runtime/intel/oclcpuexp_2022.14.8.0.04/x64/libintelocl.so
 
 else
-ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2022
-SYCL_VERSION  := 2022.2.0
+ONEAPI_BASE := /cvmfs/projects.cern.ch/intelsw/oneAPI/linux/x86_64/2023
+SYCL_VERSION  := latest
 ifneq ($(wildcard $(ONEAPI_BASE)),)
 ONEAPI_ENV    := $(ONEAPI_BASE)/setvars.sh
 SYCL_BASE     := $(ONEAPI_BASE)/compiler/$(SYCL_VERSION)/linux
 TBB_BASE := $(ONEAPI_BASE)/tbb/latest
 TBB_LIBDIR := $(TBB_BASE)/lib/intel64/gcc4.8
-USER_SYCLFLAGS := -fp-model=precise -fimf-arch-consistency=true -no-fma -fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
-export SYCL_CXX      := $(SYCL_BASE)/bin/dpcpp
-export SYCL_CXXFLAGS := -fsycl -Wsycl-strict $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS)
+USER_SYCLFLAGS := -fp-model=precise -fimf-arch-consistency=true -no-fma 
+ONEAPI_AOTFLAGS := #-fsycl-targets=spir64_x86_64,nvptx64-nvidia-cuda -fno-bundle-offload-arch --cuda-path=$(CUDA_BASE) -Wno-unknown-cuda-version -Wno-linker-warnings
+#-fsycl-targets=spir64_x86_64,spir64_gen -Xsycl-target-backend=spir64_gen "-device xe_hp_sdv"
+export SYCL_CXX      := $(SYCL_BASE)/bin-llvm/clang++
+export SYCL_CXXFLAGS := -fsycl -Wsycl-strict $(filter-out $(SYCL_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(USER_SYCLFLAGS) $(ONEAPI_AOTFLAGS)
 endif
 endif
 
@@ -447,7 +449,7 @@ endif
 	@echo '$$PATH'                                                          >> $@
 # check if oneAPI environment file exists
 ifneq ($(wildcard $(ONEAPI_ENV)),)
-	@echo 'source $(ONEAPI_ENV)'                                            >> $@
+	@echo 'source $(ONEAPI_ENV) --include-intel-llvm'                       >> $@
 else
 	@echo 'export OCL_ICD_FILENAMES=$(OCL_ICD_FILENAMES)'                   >> $@
 endif
@@ -621,7 +623,7 @@ $(HWLOC_BASE):
 external_alpaka: $(ALPAKA_BASE)
 
 $(ALPAKA_BASE):
-	git clone https://github.com/Parsifal-2045/alpaka.git -b develop $@
+	git clone https://github.com/Parsifal-2045/alpaka.git -b SYCL_USM $@
 
 # Kokkos
 external_kokkos: $(KOKKOS_LIB)
