@@ -31,7 +31,7 @@ namespace alpaka {
   struct ApiHipRt;
 
   namespace detail {
-    struct IntelCpuSelector;
+    struct SyclCpuSelector;
     struct IntelGpuSelector;
   }  // namespace detail
 
@@ -43,7 +43,7 @@ namespace alpaka {
   using PltfHipRt = PltfUniformCudaHipRt<ApiHipRt>;
   template <typename TSelector>
   class PltfGenericSycl;
-  using PltfCpuSyclIntel = PltfGenericSycl<detail::IntelCpuSelector>;
+  using PltfCpuSycl = PltfGenericSycl<detail::SyclCpuSelector>;
   using PltfGpuSyclIntel = PltfGenericSycl<detail::IntelGpuSelector>;
 
   // Devices
@@ -54,7 +54,7 @@ namespace alpaka {
   using DevHipRt = DevUniformCudaHipRt<ApiHipRt>;
   template <typename TPltf>
   class DevGenericSycl;
-  using DevCpuSyclIntel = DevGenericSycl<PltfCpuSyclIntel>;
+  using DevCpuSycl = DevGenericSycl<PltfCpuSycl>;
   using DevGpuSyclIntel = DevGenericSycl<PltfGpuSyclIntel>;
 
   // Queues
@@ -75,13 +75,19 @@ namespace alpaka {
   using QueueHipRtBlocking = uniform_cuda_hip::detail::QueueUniformCudaHipRt<ApiHipRt, true>;
   using QueueHipRtNonBlocking = uniform_cuda_hip::detail::QueueUniformCudaHipRt<ApiHipRt, false>;
 
-  template <typename TDev, bool TBlocking>
-  class QueueGenericSyclBase;
+  namespace detail {
+    template <typename TDev, bool TBlocking>
+    class QueueGenericSyclBase;
+  }
+  template <typename TDev>
+  using QueueGenericSyclBlocking = detail::QueueGenericSyclBase<TDev, true>;
+  template <typename TDev>
+  using QueueGenericSyclNonBlocking = detail::QueueGenericSyclBase<TDev, false>;
 
-  using QueueCpuSyclIntelBlocking = QueueGenericSyclBase<DevCpuSyclIntel, true>;
-  using QueueCpuSyclIntelNonBlocking = QueueGenericSyclBase<DevCpuSyclIntel, false>;
-  using QueueGpuSyclIntelBlocking = QueueGenericSyclBase<DevGpuSyclIntel, true>;
-  using QueueGpuSyclIntelNonBlocking = QueueGenericSyclBase<DevGpuSyclIntel, false>;
+  using QueueCpuSyclBlocking = QueueGenericSyclBlocking<DevCpuSycl>;
+  using QueueCpuSyclNonBlocking = QueueGenericSyclNonBlocking<DevCpuSycl>;
+  using QueueGpuSyclIntelBlocking = QueueGenericSyclBlocking<DevGpuSyclIntel>;
+  using QueueGpuSyclIntelNonBlocking = QueueGenericSyclNonBlocking<DevGpuSyclIntel>;
 
   // Events
   template <typename TDev>
@@ -95,7 +101,7 @@ namespace alpaka {
 
   template <typename TDev>
   class EventGenericSycl;
-  using EventCpuSyclIntel = EventGenericSycl<DevCpuSyclIntel>;
+  using EventCpuSycl = EventGenericSycl<DevCpuSycl>;
   using EventGpuSyclIntel = EventGenericSycl<DevGpuSyclIntel>;
 
   // Accelerators
@@ -118,7 +124,7 @@ namespace alpaka {
   class AccCpuOmp2Blocks;
 
   template <typename TDim, typename TIdx>
-  class AccCpuSyclIntel;
+  class AccCpuSycl;
 
   template <typename TDim, typename TIdx>
   class AccGpuSyclIntel;
