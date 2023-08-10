@@ -18,7 +18,8 @@ int main() {
   std::cout << "World" << std::endl;
 
   using namespace ALPAKA_ACCELERATOR_NAMESPACE;
-  const Device device(alpaka::getDevByIdx<Platform>(0u));
+  std::optional<Platform> platform = Platform{};
+  const Device device(alpaka::getDevByIdx(*platform, 0u));
   Queue queue(device);
 
   // Prepare 1D workDiv

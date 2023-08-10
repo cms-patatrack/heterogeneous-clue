@@ -623,7 +623,8 @@ $(HWLOC_BASE):
 external_alpaka: $(ALPAKA_BASE)
 
 $(ALPAKA_BASE):
-	git clone https://github.com/Parsifal-2045/alpaka.git -b SYCL_USM $@
+	git clone https://github.com/alpaka-group/alpaka.git -b develop $@
+	cd $@ && git checkout 23edf577e58015a5a20af2db5f8c5892e043ef80
 
 # Kokkos
 external_kokkos: $(KOKKOS_LIB)
