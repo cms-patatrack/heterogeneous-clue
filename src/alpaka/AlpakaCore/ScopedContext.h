@@ -30,7 +30,7 @@ namespace cms::alpakatools {
     public:
       using Queue = TQueue;
       using Device = alpaka::Dev<Queue>;
-      using Platform = alpaka::Pltf<Device>;
+      using Platform = alpaka::Platform<Device>;
 
       Device device() const { return alpaka::getDev(*stream_); }
 
@@ -216,13 +216,34 @@ namespace cms::alpakatools {
 
     /// Constructor to re-use the CUDA stream of acquire() (ExternalWork module)
     explicit ScopedContextProduce(ContextState<Queue>& state)
-        : ScopedContextGetterBase(state.releaseStreamPtr()), event_{getEventCache<Event>().get(device())} {}
+#if defined(ALPAKA_ACC_SYCL_ENABLED)
+        : ScopedContextGetterBase(state.releaseStreamPtr()), event_{std::make_shared<Event>(device())} {
+      event_->setEvent(stream().getNativeHandle().submit_barrier());
+    }
+#else
+        : ScopedContextGetterBase(state.releaseStreamPtr()), event_{getEventCache<Event>().get(device())} {
+    }
+#endif
 
     explicit ScopedContextProduce(ProductBase<Queue> const& data)
-        : ScopedContextGetterBase(data), event_{getEventCache<Event>().get(device())} {}
+#if defined(ALPAKA_ACC_SYCL_ENABLED)
+        : ScopedContextGetterBase(data), event_{std::make_shared<Event>(device())} {
+      event_->setEvent(stream().getNativeHandle().submit_barrier());
+    }
+#else
+        : ScopedContextGetterBase(data), event_{getEventCache<Event>().get(device())} {
+    }
+#endif
 
     explicit ScopedContextProduce(edm::StreamID streamID)
-        : ScopedContextGetterBase(streamID), event_{getEventCache<Event>().get(device())} {}
+#if defined(ALPAKA_ACC_SYCL_ENABLED)
+        : ScopedContextGetterBase(streamID), event_{std::make_shared<Event>(device())} {
+      event_->setEvent(stream().getNativeHandle().submit_barrier());
+    }
+#else
+        : ScopedContextGetterBase(streamID), event_{getEventCache<Event>().get(device())} {
+    }
+#endif
 
     /// Record the event, all asynchronous work must have been queued before the destructor
     ~ScopedContextProduce() {
